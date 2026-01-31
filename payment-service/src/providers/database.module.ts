@@ -1,41 +1,47 @@
-import { Module, OnModuleDestroy } from '@nestjs/common';
+import { Inject, Module, OnModuleDestroy } from '@nestjs/common';
 import { Sequelize } from 'sequelize';
 import { initModels } from '../model';
+import { ConfigService } from '@nestjs/config';
 
 export const SEQUELIZE = Symbol('SEQUELIZE');
 export const MODELS = Symbol('MODELS');
-
-const sequelize = new Sequelize(
-  'postgresql://postgres:password@localhost:5432/ipg',
-  {
-    dialect: 'postgres',
-    logging: false,
-    pool: {
-      max: 10,
-      min: 0,
-      acquire: 30000,
-      idle: 10000,
-    },
-  },
-);
-
-const models = initModels(sequelize);
 
 @Module({
   providers: [
     {
       provide: SEQUELIZE,
-      useValue: sequelize,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const sequelize = new Sequelize(
+          config.get<string>('DATABASE_URL', { infer: true }),
+          {
+            dialect: 'postgres',
+            logging: false,
+            pool: {
+              max: 10,
+              min: 0,
+              acquire: 30000,
+              idle: 10000,
+            },
+          },
+        );
+        return sequelize;
+      },
     },
     {
       provide: MODELS,
-      useValue: models,
+      inject: [SEQUELIZE],
+      useFactory: (sequelize: Sequelize) => {
+        return initModels(sequelize);
+      },
     },
   ],
   exports: [SEQUELIZE, MODELS],
 })
 export class DatabaseModule implements OnModuleDestroy {
+  constructor(@Inject(SEQUELIZE) private readonly sequelize: Sequelize) {}
+
   async onModuleDestroy() {
-    await sequelize.close(); // graceful shutdown
+    await this.sequelize.close(); // graceful shutdown
   }
 }

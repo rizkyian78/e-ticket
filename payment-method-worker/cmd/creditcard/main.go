@@ -9,23 +9,35 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/joho/godotenv"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 func main() {
 	logger := log.New(os.Stdout, "[PAYMENT-WORKER] ", log.LstdFlags)
 
-	amqpURL := "amqp://guest:guest@localhost:5672/"
-	dbURL := "postgresql://postgres:password@localhost:5432/worker?sslmode=disable"
+	if err := godotenv.Load(); err != nil {
+		log.Println("no .env file found, using environment")
+	}
+
+	rabbitHost := os.Getenv("AMQP_URL")
+	if rabbitHost == "" {
+		log.Fatal("AMQP_URL is required")
+	}
+
+	dbHost := os.Getenv("DATABASE_URL")
+	if dbHost == "" {
+		log.Fatal("DATABASE_URL is required")
+	}
 
 	// postgres
-	store, err := postgres.NewPostgresStore(dbURL)
+	store, err := postgres.NewPostgresStore(dbHost)
 	if err != nil {
 		logger.Fatal(err)
 	}
 
 	// rabbitmq
-	conn, err := amqp.Dial(amqpURL)
+	conn, err := amqp.Dial(rabbitHost)
 	if err != nil {
 		logger.Fatal(err)
 	}

@@ -1,17 +1,20 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as amqp from 'amqplib';
 
 @Injectable()
 export class RabbitmqClientService implements OnModuleInit, OnModuleDestroy {
   private connection: amqp.Connection;
   private channel: amqp.Channel;
+  constructor(private readonly config: ConfigService) {}
+
   async onModuleInit() {
     this.connection = await amqp.connect({
       protocol: 'amqp',
-      hostname: process.env.RABBITMQ_HOST ?? 'localhost',
+      hostname: this.config.get('RABBITMQ_HOST') ?? 'host.docker.internal',
       port: 5672,
-      username: process.env.RABBITMQ_USER ?? 'guest',
-      password: process.env.RABBITMQ_PASS ?? 'guest',
+      username: this.config.get('RABBITMQ_USER') ?? 'guest',
+      password: this.config.get('RABBITMQ_PASS') ?? 'guest',
     });
     this.channel = await this.connection.createChannel();
   }

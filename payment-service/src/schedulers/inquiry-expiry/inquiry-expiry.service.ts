@@ -18,7 +18,7 @@ export class InquiryExpiryService {
     @Inject(SEQUELIZE)
     private readonly sequelize: Sequelize,
   ) {}
-  @Cron(CronExpression.EVERY_YEAR)
+  @Cron(CronExpression.EVERY_MINUTE)
   async handleExpiry() {
     this.logger.log('Running inquiry expiry job...');
 

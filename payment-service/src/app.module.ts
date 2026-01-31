@@ -11,10 +11,14 @@ import { ServicesModule } from './services/services.module';
 import { TransactionConsumerService } from './services/transaction-consumer/transaction.service';
 import { MessagingModule } from './utils/messaging/messaging.module';
 import { LedgerStrategyModule } from './services/ledger/ledger.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
     ControllersModule,
+    ConfigModule.forRoot({
+      isGlobal: true, // available everywhere
+    }),
     DatabaseModule,
     ScheduleModule.forRoot(),
     RepositoryModule,

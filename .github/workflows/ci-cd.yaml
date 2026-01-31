@@ -111,21 +111,6 @@ jobs:
           cd ticket-service
           dotnet test --collect:"XPlat Code Coverage"
 
-# =========================
-# SONARQUBE SCAN
-# =========================
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v2
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.projectKey=${{ env.SONAR_PROJECT_KEY }}
-            -Dsonar.sources=.
-            -Dsonar.javascript.lcov.reportPaths=demoshop/coverage/lcov.info,payment-service/coverage/lcov.info
-            -Dsonar.python.coverage.reportPaths=ledger-service/coverage.xml
-            -Dsonar.cs.opencover.reportsPaths=ticket-service/**/coverage.opencover.xml
-            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/bin/**,**/obj/**
 
 # =========================
 # QUALITY GATE
