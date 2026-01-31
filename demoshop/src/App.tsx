@@ -1,16 +1,7 @@
-import { useState } from 'react';
-import { Layout } from '@/component/Layout';
-import { Header } from '@/component/Header';
-import { CustomerForm } from './component/CustomerForm';
-import { TicketGrid } from './component/TicketGrid';
-import { OrderSummary } from './component/OrderSummary';
-import { PaymentInfo } from './component/PaymentInfo';
-import { TICKETS } from './data/ticket';
+
 
 export default function App() {
-  const [customer, setCustomer] = useState({ name: '', email: '', phone: '' });
-  const [qty, setQty] = useState<Record<string, number>>({});
-  const [token, setToken] = useState('tok_visa_123456');
+
 
   return (
     <div className="min-h-screen bg-gray-100 p-10">

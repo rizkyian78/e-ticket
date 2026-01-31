@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/types.ts","./src/component/customerform.tsx","./src/component/header.tsx","./src/component/layout.tsx","./src/component/ordersummary.tsx","./src/component/paymentinfo.tsx","./src/component/ticketcard.tsx","./src/component/ticketgrid.tsx","./src/data/ticket.ts","./vite.config.ts"],"version":"5.9.3"}
