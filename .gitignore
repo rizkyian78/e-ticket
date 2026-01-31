@@ -155,3 +155,12 @@ target/
 
 
 go.sum
+
+
+# --- coverage files ---
+coverage.xml
+coverage.out
+coverage.*
+.coverage
+*.lcov
+lcov.info
