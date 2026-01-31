@@ -122,7 +122,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.projectKey=e-ticketing-platform
+            -Dsonar.projectKey=e-ticket
             -Dsonar.organization=<your-org>
             -Dsonar.sources=.
         
