@@ -1,13 +1,17 @@
-name: CI Pipeline (Tests + Coverage + SonarQube)
+name: CI Pipeline (Tests + Coverage + SonarQube + Docker)
 
 on:
   pull_request:
   push:
     branches: ["main"]
 
+permissions:
+  contents: read
+
 env:
   SONAR_PROJECT_KEY: e-ticketing-platform
-  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/e-ticketing
+  IMAGE_PREFIX: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/e-ticketing
+  IMAGE_TAG: ${{ github.sha }}
 
 jobs:
 
@@ -67,7 +71,7 @@ jobs:
 # =========================
   merge-tests-coverage-sonar:
     if: github.event_name == 'push'
-    name: Merge - Full Test + Coverage + SonarQube
+    name: Merge - Test + Coverage + Sonar + Docker Push
     runs-on: ubuntu-latest
 
     steps:
@@ -111,7 +115,6 @@ jobs:
           cd ticket-service
           dotnet test --collect:"XPlat Code Coverage"
 
-
 # =========================
 # QUALITY GATE
 # =========================
@@ -122,7 +125,39 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
 # =========================
-# APPEND COVERAGE TO GITHUB
+# DOCKER LOGIN
+# =========================
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+# =========================
+# BUILD & PUSH IMAGES
+# =========================
+      - name: Build & Push Frontend Image
+        run: |
+          docker build -t $IMAGE_PREFIX-frontend:$IMAGE_TAG demoshop
+          docker push $IMAGE_PREFIX-frontend:$IMAGE_TAG
+
+      - name: Build & Push Payment Image
+        run: |
+          docker build -t $IMAGE_PREFIX-payment:$IMAGE_TAG payment-service
+          docker push $IMAGE_PREFIX-payment:$IMAGE_TAG
+
+      - name: Build & Push Ledger Image
+        run: |
+          docker build -t $IMAGE_PREFIX-ledger:$IMAGE_TAG ledger-service
+          docker push $IMAGE_PREFIX-ledger:$IMAGE_TAG
+
+      - name: Build & Push Ticket Image
+        run: |
+          docker build -t $IMAGE_PREFIX-ticket:$IMAGE_TAG ticket-service
+          docker push $IMAGE_PREFIX-ticket:$IMAGE_TAG
+
+# =========================
+# UPLOAD COVERAGE
 # =========================
       - name: Upload Coverage Reports
         uses: actions/upload-artifact@v4
