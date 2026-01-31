@@ -1,4 +1,4 @@
-@ticket_service_HostAddress = http://localhost:5208
+@ticket_service_HostAddress = http://localhost:8080
 
 GET {{ticket_service_HostAddress}}/weatherforecast/
 Accept: application/json
