@@ -169,6 +169,17 @@ jobs:
         run: |
           docker build -t $IMAGE_PREFIX-ticket:$IMAGE_TAG ticket-service
           docker push $IMAGE_PREFIX-ticket:$IMAGE_TAG
+      - name: Build & Push Creditcard Worker Image
+        run: |
+          IMAGE_TAG=${GITHUB_SHA::7}
+
+          docker build \
+          -t $IMAGE_PREFIX-creditcard-worker:$IMAGE_TAG \
+          --build-arg CMD_PATH=./cmd/creditcard \
+          payment-method-worker
+
+          docker push $IMAGE_PREFIX-creditcard-worker:$IMAGE_TAG
+      
 
 # =========================
 # UPLOAD COVERAGE
