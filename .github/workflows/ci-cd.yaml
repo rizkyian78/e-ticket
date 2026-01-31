@@ -1,0 +1,151 @@
+name: CI Pipeline (Tests + Coverage + SonarQube)
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+
+env:
+  SONAR_PROJECT_KEY: e-ticketing-platform
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/e-ticketing
+
+jobs:
+
+# =========================
+# PR PIPELINE
+# =========================
+  pr-tests:
+    if: github.event_name == 'pull_request'
+    name: PR - Full Test Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+# ---------- FRONTEND ----------
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Frontend Tests
+        run: |
+          cd demoshop
+          yarn install
+          yarn lint || true
+          yarn test
+
+# ---------- PAYMENT ----------
+      - name: Payment Tests
+        run: |
+          cd payment-service
+          yarn install
+          yarn lint || true
+          yarn test
+
+# ---------- LEDGER ----------
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Ledger Tests
+        run: |
+          cd ledger-service
+          pip install -r requirements.txt
+          pip install pytest
+          pytest
+
+# ---------- TICKET (.NET) ----------
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Ticket Tests
+        run: |
+          cd ticket-service
+          dotnet restore
+          dotnet test
+
+# =========================
+# MERGE PIPELINE
+# =========================
+  merge-tests-coverage-sonar:
+    if: github.event_name == 'push'
+    name: Merge - Full Test + Coverage + SonarQube
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+# ---------- FRONTEND ----------
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Frontend Coverage
+        run: |
+          cd demoshop
+          yarn install
+          yarn test --coverage
+
+# ---------- PAYMENT ----------
+      - name: Payment Coverage
+        run: |
+          cd payment-service
+          yarn install
+          yarn test --coverage
+
+# ---------- LEDGER ----------
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Ledger Coverage
+        run: |
+          cd ledger-service
+          pip install -r requirements.txt
+          pip install pytest pytest-cov flake8
+          flake8 . || true
+          pytest --cov=. --cov-report=xml
+
+# ---------- TICKET (.NET) ----------
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Ticket Coverage
+        run: |
+          cd ticket-service
+          dotnet test --collect:"XPlat Code Coverage"
+
+# =========================
+# SONARQUBE SCAN
+# =========================
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.projectKey=${{ env.SONAR_PROJECT_KEY }}
+            -Dsonar.sources=.
+            -Dsonar.javascript.lcov.reportPaths=demoshop/coverage/lcov.info,payment-service/coverage/lcov.info
+            -Dsonar.python.coverage.reportPaths=ledger-service/coverage.xml
+            -Dsonar.cs.opencover.reportsPaths=ticket-service/**/coverage.opencover.xml
+            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/bin/**,**/obj/**
+
+# =========================
+# QUALITY GATE
+# =========================
+      - name: SonarQube Quality Gate
+        uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+# =========================
+# APPEND COVERAGE TO GITHUB
+# =========================
+      - name: Upload Coverage Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-code-coverage
+          path: |
+            demoshop/coverage
+            payment-service/coverage
+            ledger-service/coverage.xml
+            ticket-service/**/coverage.opencover.xml
