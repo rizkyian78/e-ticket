@@ -116,6 +116,16 @@ jobs:
         run: |
           cd ticket-service
           dotnet test --collect:"XPlat Code Coverage"
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=e-ticketing-platform
+            -Dsonar.organization=<your-org>
+            -Dsonar.sources=.
+        
 
 # =========================
 # QUALITY GATE
