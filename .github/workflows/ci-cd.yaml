@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  SONAR_PROJECT_KEY: e-ticketing-platform
+  SONAR_PROJECT_KEY: e-ticket
   IMAGE_PREFIX: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/e-ticketing
   IMAGE_TAG: ${{ github.sha }}
 
