@@ -123,7 +123,7 @@ jobs:
         with:
           args: >
             -Dsonar.projectKey=rizkyian78_e-ticket
-            -Dsonar.organization=<your-org>
+            -Dsonar.organization=rizkyian78
             -Dsonar.sources=.
         
 
