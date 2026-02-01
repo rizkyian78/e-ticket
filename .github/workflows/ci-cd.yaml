@@ -183,7 +183,7 @@ jobs:
 
           docker build \
           -t $IMAGE_PREFIX-creditcard-worker:$IMAGE_TAG \
-          --build-arg CMD_PATH=./cmd/creditcard \
+          --build-arg CMD_NAME=creditcard \
           payment-method-worker
 
           docker push $IMAGE_PREFIX-creditcard-worker:$IMAGE_TAG
