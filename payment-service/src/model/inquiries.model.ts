@@ -9,6 +9,7 @@ export interface InquiryAttributes {
   currency: string;
   total_amount: bigint;
   status: string;
+  return_url: string;
   customer?: object | null;
   orders?: object | null;
   created_at: Date;
@@ -33,6 +34,7 @@ export class Inquiry
   public currency!: string;
   public total_amount!: bigint;
   public status!: string;
+  public return_url!: string;
   public customer!: object | null;
   public orders!: Record<string, any>[] | null;
   public expired_at: Date;
@@ -53,6 +55,7 @@ export class Inquiry
         locked_amount: DataTypes.DECIMAL(18, 2),
         currency: DataTypes.STRING(10),
         total_amount: DataTypes.DECIMAL(18, 2),
+        return_url: DataTypes.STRING(150),
         status: DataTypes.STRING(30),
         customer: DataTypes.JSONB,
         orders: DataTypes.JSONB,

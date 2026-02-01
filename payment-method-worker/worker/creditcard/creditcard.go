@@ -26,6 +26,7 @@ func NewHandler(
 
 func (h *CreditCardHandler) Process(
 	ctx context.Context,
+
 	payload string,
 ) (map[string]interface{}, error) {
 

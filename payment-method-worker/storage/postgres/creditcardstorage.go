@@ -19,7 +19,7 @@ func (p *PostgresStore) SaveRecordCC(
 		method,
 		status,
 		reference_id
-	) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+	) VALUES ($1,$2,$3,$4,$5,$6,$7)
 	`
 
 	_, err := p.db.ExecContext(

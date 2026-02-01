@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -42,7 +43,7 @@ export class PaymentsService {
       body.idempotencyKey,
     );
     if (existingTransaction) {
-      return this.map(existingTransaction);
+      throw new BadRequestException('Too Many Request');
     }
 
     const inquiry = await this.inquiryRepo.findById(body.inquiryId);
@@ -82,7 +83,7 @@ export class PaymentsService {
         customer: inquiry.customer,
         payment_method: body.paymentSource,
         payment_reference: inquiry.reference_id,
-        idempotency_key: `PURCHASE:${inquiry.id}:${body.paymentSource}`,
+        idempotency_key: body.idempotencyKey,
         status_data: {},
         status_code: '-1',
         inquiry_amount: inquiry.total_amount.toString(),
@@ -105,6 +106,10 @@ export class PaymentsService {
     });
 
     return this.map(transaction);
+  }
+
+  public retrieveTransaction(id: string) {
+    return this.transactionRepo.findById(id);
   }
 
   public getHandler(method: string): PaymentHandler {

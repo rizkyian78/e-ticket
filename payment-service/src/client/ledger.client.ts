@@ -14,7 +14,7 @@ export class LedgerClient {
 
   async postLedger(payload: any) {
     return firstValueFrom(
-      this.http.post(`${this.ledgerServiceUrl}/api/v1/ledger/entries`, payload),
+      this.http.post(`${this.ledgerServiceUrl}/api/ledger/entries`, payload),
     );
   }
 }

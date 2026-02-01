@@ -7,6 +7,7 @@ import { Transaction } from './transactions.model';
 import { LedgerAccount } from './ledger_accounts';
 import { LedgerEntry } from './ledger_entries.model';
 import { HandledTransctions } from './handled_transactions';
+import { Merchant } from './merchants.model';
 
 export const initModels = (sequelize: Sequelize) => {
   User.initModel(sequelize);
@@ -16,6 +17,7 @@ export const initModels = (sequelize: Sequelize) => {
   LedgerAccount.initModel(sequelize);
   LedgerEntry.initModel(sequelize);
   HandledTransctions.initModel(sequelize);
+  Merchant.initModel(sequelize);
 
   // no relations
 
@@ -27,5 +29,6 @@ export const initModels = (sequelize: Sequelize) => {
     LedgerAccount,
     LedgerEntry,
     HandledTransctions,
+    Merchant,
   };
 };
