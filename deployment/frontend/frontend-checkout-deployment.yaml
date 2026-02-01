@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: checkout-app
-          image: rizkyian78/e-ticketing-checkout-app:10ced76ff2daf0e3c252cf88844e341bd109fb4
+          image: rizkyian78/e-ticketing-checkout-app:9f84bcf
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
