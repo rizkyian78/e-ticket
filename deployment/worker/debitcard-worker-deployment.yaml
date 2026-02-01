@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: debitcard-worker
+  namespace: e-ticket
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: debitcard-worker
+  template:
+    metadata:
+      labels:
+        app: debitcard-worker
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-secret   # remove if image is public
+      containers:
+        - name: debitcard-worker
+          image: rizkyian78/debitcard-worker:<COMMIT_SHA>
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: app-secrets
+          env:
+            - name: WORKER_TYPE
+              value: "debitcard"

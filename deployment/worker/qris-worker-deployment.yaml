@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qris-worker
+  namespace: e-ticket
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qris-worker
+  template:
+    metadata:
+      labels:
+        app: qris-worker
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-secret   # remove if image is public
+      containers:
+        - name: qris-worker
+          image: rizkyian78/qris-worker:<COMMIT_SHA>
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: app-secrets
+          env:
+            - name: WORKER_TYPE
+              value: "qris"

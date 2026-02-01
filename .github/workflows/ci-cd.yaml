@@ -187,7 +187,26 @@ jobs:
           payment-method-worker
 
           docker push $IMAGE_PREFIX-creditcard-worker:$IMAGE_TAG
-      
+      - name: Build & Push QRIS Worker Image
+        run: |
+          IMAGE_TAG=${GITHUB_SHA::7}
+
+          docker build \
+          --build-arg CMD_NAME=qris \
+          -t $IMAGE_PREFIX-qris-worker:$IMAGE_TAG \
+          payment-method-worker
+
+          docker push $IMAGE_PREFIX-qris-worker:$IMAGE_TAG
+      - name: Build & Push Debitcard Worker Image
+        run: |
+          IMAGE_TAG=${GITHUB_SHA::7}
+
+          docker build \
+          --build-arg CMD_NAME=debitcard \
+          -t $IMAGE_PREFIX-debitcard-worker:$IMAGE_TAG \
+          payment-method-worker
+
+          docker push $IMAGE_PREFIX-debitcard-worker:$IMAGE_TAG
 
 # =========================
 # UPLOAD COVERAGE
