@@ -152,11 +152,6 @@ target/
 # Registry Auth
 # -----------------------------
 .docker/config.json
-
-
-go.sum
-
-
 # --- coverage files ---
 coverage.xml
 coverage.out
