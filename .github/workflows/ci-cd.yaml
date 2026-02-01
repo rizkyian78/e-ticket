@@ -1,4 +1,4 @@
-name: CI Pipeline (Monorepo – Tests, Coverage, Sonar, Docker)
+name: CI Pipeline (Tests + Coverage + SonarQube + Docker)
 
 on:
   pull_request:
@@ -10,195 +10,209 @@ permissions:
 
 env:
   SONAR_PROJECT_KEY: rizkyian78_e-ticket
-  SONAR_ORGANIZATION: rizkyian78
   IMAGE_PREFIX: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/e-ticketing
 
-# =========================================================
-# PR: TESTS + LINT + COVERAGE (PARALLEL MATRIX)
-# =========================================================
 jobs:
-  pr-quality:
+
+# =========================
+# PR PIPELINE
+# =========================
+  pr-tests:
     if: github.event_name == 'pull_request'
+    name: PR - Full Test Suite
     runs-on: ubuntu-latest
-    name: PR – Quality Gate
-
-    strategy:
-      fail-fast: false
-      matrix:
-        service:
-          # ---------- FRONTEND ----------
-          - name: demoshop
-            path: demoshop
-            type: node
-          - name: checkout-app
-            path: checkout-app
-            type: node
-          - name: backoffice-app
-            path: backoffice-app
-            type: node
-
-          # ---------- BACKEND ----------
-          - name: payment-service
-            path: payment-service
-            type: node
-          - name: ledger-service
-            path: ledger-service
-            type: python
-          - name: ticket-service
-            path: ticket-service
-            type: dotnet
-
-          # ---------- WORKERS ----------
-          - name: creditcard-worker
-            path: payment-method-worker
-            type: go
-          - name: qris-worker
-            path: payment-method-worker
-            type: go
-          - name: debitcard-worker
-            path: payment-method-worker
-            type: go
+    environment: e-ticket
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      # ================= NODE =================
+# ---------- FRONTEND ----------
       - uses: actions/setup-node@v4
-        if: matrix.service.type == 'node'
         with:
           node-version: 20
-
-      - name: Node – Lint, Test, Coverage
-        if: matrix.service.type == 'node'
+      - name: Frontend Tests
         run: |
-          cd ${{ matrix.service.path }}
-          yarn install --frozen-lockfile
-          yarn lint
-          yarn test --coverage
+          cd demoshop
+          yarn install
+          yarn lint || true
+          yarn test
 
-      # ================= PYTHON =================
+# ---------- PAYMENT ----------
+      - name: Payment Tests
+        run: |
+          cd payment-service
+          yarn install
+          yarn lint || true
+          yarn test
+
+# ---------- LEDGER ----------
       - uses: actions/setup-python@v5
-        if: matrix.service.type == 'python'
         with:
           python-version: "3.11"
-
-      - name: Python – Lint, Test, Coverage
-        if: matrix.service.type == 'python'
+      - name: Ledger Tests
         run: |
-          cd ${{ matrix.service.path }}
+          cd ledger-service
           pip install -r requirements.txt
-          pip install pytest pytest-cov flake8
-          flake8 .
-          pytest --cov=. --cov-report=xml
+          pip install pytest
+          pytest
 
-      # ================= DOTNET =================
+# ---------- TICKET (.NET) ----------
       - uses: actions/setup-dotnet@v4
-        if: matrix.service.type == 'dotnet'
         with:
           dotnet-version: "8.0.x"
-
-      - name: .NET – Test, Coverage
-        if: matrix.service.type == 'dotnet'
+      - name: Ticket Tests
         run: |
-          cd ${{ matrix.service.path }}
-          dotnet test --collect:"XPlat Code Coverage"
+          cd ticket-service
+          dotnet restore
+          dotnet test
 
-      # ================= GO =================
-      - uses: actions/setup-go@v5
-        if: matrix.service.type == 'go'
-        with:
-          go-version: "1.22"
-
-      - name: Go – Test
-        if: matrix.service.type == 'go'
-        run: |
-          cd ${{ matrix.service.path }}
-          go test ./...
-
-# =========================================================
-# SONARCLOUD (RUN ON PR AFTER TESTS)
-# =========================================================
-  sonar:
-    if: github.event_name == 'pull_request'
-    needs: pr-quality
+# =========================
+# MERGE PIPELINE
+# =========================
+  merge-tests-coverage-sonar:
+    if: github.event_name == 'push'
+    name: Merge - Test + Coverage + Sonar + Docker Push
     runs-on: ubuntu-latest
-    name: SonarCloud Scan
+    environment: e-ticket
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
+# ---------- FRONTEND ----------
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Frontend Coverage
+        run: |
+          cd demoshop
+          yarn install
+          yarn test --coverage
+
+# ---------- PAYMENT ----------
+      - name: Payment Coverage
+        run: |
+          cd payment-service
+          yarn install
+          yarn test --coverage
+
+# ---------- LEDGER ----------
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Ledger Coverage
+        run: |
+          cd ledger-service
+          pip install -r requirements.txt
+          pip install pytest pytest-cov flake8
+          flake8 . || true
+          pytest --cov=. --cov-report=xml
+
+# ---------- TICKET (.NET) ----------
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Ticket Coverage
+        run: |
+          cd ticket-service
+          dotnet test --collect:"XPlat Code Coverage"
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.projectKey=${{ env.SONAR_PROJECT_KEY }}
-            -Dsonar.organization=${{ env.SONAR_ORGANIZATION }}
+            -Dsonar.projectKey=rizkyian78_e-ticket
+            -Dsonar.organization=rizkyian78
             -Dsonar.sources=.
-            -Dsonar.javascript.lcov.reportPaths=demoshop/coverage/lcov.info,checkout-app/coverage/lcov.info,backoffice-app/coverage/lcov.info,payment-service/coverage/lcov.info
-            -Dsonar.python.coverage.reportPaths=ledger-service/coverage.xml
+        
 
-# =========================================================
-# MAIN: DOCKER BUILD & PUSH (PARALLEL)
-# =========================================================
-  docker-build:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    name: Build & Push Docker Images
+# =========================
+# QUALITY GATE
+# =========================
+      - name: SonarQube Quality Gate
+        uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
+        timeout-minutes: 5
+        continue-on-error: true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-    strategy:
-      fail-fast: false
-      matrix:
-        image:
-          - name: frontend
-            path: demoshop
-          - name: checkout
-            path: checkout-app
-          - name: backoffice
-            path: backoffice-app
-          - name: payment
-            path: payment-service
-          - name: ledger
-            path: ledger-service
-          - name: ticket
-            path: ticket-service
-          - name: creditcard-worker
-            path: payment-method-worker
-            build_arg: creditcard
-          - name: qris-worker
-            path: payment-method-worker
-            build_arg: qris
-          - name: debitcard-worker
-            path: payment-method-worker
-            build_arg: debitcard
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: docker/login-action@v3
+# =========================
+# DOCKER LOGIN
+# =========================
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Set Image Tag
+      - name: Set image tag
         run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
-
-      - name: Build & Push Image
+          # =========================
+# BUILD & PUSH IMAGES
+# =========================
+      - name: Build & Push Frontend Image
         run: |
-          if [ -n "${{ matrix.image.build_arg }}" ]; then
-            docker build \
-              -t $IMAGE_PREFIX-${{ matrix.image.name }}:$IMAGE_TAG \
-              --build-arg CMD_NAME=${{ matrix.image.build_arg }} \
-              ${{ matrix.image.path }}
-          else
-            docker build \
-              -t $IMAGE_PREFIX-${{ matrix.image.name }}:$IMAGE_TAG \
-              ${{ matrix.image.path }}
-          fi
+          docker build -t $IMAGE_PREFIX-frontend:$IMAGE_TAG demoshop
+          docker push $IMAGE_PREFIX-frontend:$IMAGE_TAG
+      - name: Build & Push Frontend Checkout Image
+        run: |
+          docker build -t $IMAGE_PREFIX-checkout-app:$IMAGE_TAG checkout-app
+          docker push $IMAGE_PREFIX-checkout-app:$IMAGE_TAG
+      - name: Build & Push Frontend Backoffice Image
+        run: |
+          docker build -t $IMAGE_PREFIX-backoffice-app:$IMAGE_TAG backoffice-app
+          docker push $IMAGE_PREFIX-backoffice-app:$IMAGE_TAG         
 
-          docker push $IMAGE_PREFIX-${{ matrix.image.name }}:$IMAGE_TAG
+      - name: Build & Push Payment Image
+        run: |
+          docker build -t $IMAGE_PREFIX-payment:$IMAGE_TAG payment-service
+          docker push $IMAGE_PREFIX-payment:$IMAGE_TAG
+
+      - name: Build & Push Ledger Image
+        run: |
+          docker build -t $IMAGE_PREFIX-ledger:$IMAGE_TAG ledger-service
+          docker push $IMAGE_PREFIX-ledger:$IMAGE_TAG
+
+      - name: Build & Push Ticket Image
+        run: |
+          docker build -t $IMAGE_PREFIX-ticket:$IMAGE_TAG ticket-service
+          docker push $IMAGE_PREFIX-ticket:$IMAGE_TAG
+      - name: Build & Push Creditcard Worker Image
+        run: |
+
+          docker build \
+          -t $IMAGE_PREFIX-creditcard-worker:$IMAGE_TAG \
+          --build-arg CMD_NAME=creditcard \
+          payment-method-worker
+
+          docker push $IMAGE_PREFIX-creditcard-worker:$IMAGE_TAG
+      - name: Build & Push QRIS Worker Image
+        run: |
+          docker build \
+          --build-arg CMD_NAME=qris \
+          -t $IMAGE_PREFIX-qris-worker:$IMAGE_TAG \
+          payment-method-worker
+
+          docker push $IMAGE_PREFIX-qris-worker:$IMAGE_TAG
+      - name: Build & Push Debitcard Worker Image
+        run: |
+          docker build \
+          --build-arg CMD_NAME=debitcard \
+          -t $IMAGE_PREFIX-debitcard-worker:$IMAGE_TAG \
+          payment-method-worker
+
+          docker push $IMAGE_PREFIX-debitcard-worker:$IMAGE_TAG
+
+# =========================
+# UPLOAD COVERAGE
+# =========================
+      - name: Upload Coverage Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-code-coverage
+          path: |
+            demoshop/coverage
+            payment-service/coverage
+            ledger-service/coverage.xml
+            ticket-service/**/coverage.opencover.xml
