@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: creditcard-worker
+  namespace: e-ticket
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: creditcard-worker
+  template:
+    metadata:
+      labels:
+        app: creditcard-worker
+    spec:
+      containers:
+        - name: creditcard-worker
+          image: ghcr.io/YOUR_ORG/creditcard-worker:latest
+          envFrom:
+            - secretRef:
+                name: app-secrets

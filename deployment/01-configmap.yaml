@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: e-ticket
+data:
+  NODE_ENV: "production"
+  ASPNETCORE_ENVIRONMENT: "Production"

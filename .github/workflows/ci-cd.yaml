@@ -154,6 +154,14 @@ jobs:
         run: |
           docker build -t $IMAGE_PREFIX-frontend:$IMAGE_TAG demoshop
           docker push $IMAGE_PREFIX-frontend:$IMAGE_TAG
+      - name: Build & Push Frontend Checkout Image
+        run: |
+          docker build -t $IMAGE_PREFIX-checkout-app:$IMAGE_TAG checkout-app
+          docker push $IMAGE_PREFIX-checkout-app:$IMAGE_TAG
+      - name: Build & Push Frontend Backoffice Image
+        run: |
+          docker build -t $IMAGE_PREFIX-backoffice-app:$IMAGE_TAG backoffice-app
+          docker push $IMAGE_PREFIX-backoffice-app:$IMAGE_TAG         
 
       - name: Build & Push Payment Image
         run: |

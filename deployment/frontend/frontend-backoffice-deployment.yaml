@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backoffice-app
+  namespace: e-ticket
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backoffice-app
+  template:
+    metadata:
+      labels:
+        app: backoffice-app
+    spec:
+      containers:
+        - name: backoffice-app
+          image: ghcr.io/YOUR_ORG/backoffice-app:latest
+          ports:
+            - containerPort: 3000

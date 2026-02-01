@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout-app
+  namespace: e-ticket
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: checkout-app
+  template:
+    metadata:
+      labels:
+        app: checkout-app
+    spec:
+      containers:
+        - name: checkout-app
+          image: ghcr.io/YOUR_ORG/checkout-app:latest
+          ports:
+            - containerPort: 3000

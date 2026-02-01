@@ -1,0 +1,64 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: e-ticket-ingress
+  namespace: e-ticket
+spec:
+  rules:
+    - host: demoshop.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: demoshop
+                port:
+                  number: 80
+
+    - host: checkout.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: checkout-app
+                port:
+                  number: 80
+
+    - host: backoffice.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: backoffice-app
+                port:
+                  number: 80
+
+    - host: api.example.com
+      http:
+        paths:
+          - path: /payment
+            pathType: Prefix
+            backend:
+              service:
+                name: payment-service
+                port:
+                  number: 80
+          - path: /ledger
+            pathType: Prefix
+            backend:
+              service:
+                name: ledger-service
+                port:
+                  number: 80
+          - path: /ticket
+            pathType: Prefix
+            backend:
+              service:
+                name: ticket-service
+                port:
+                  number: 80
