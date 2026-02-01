@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: creditcard-worker
-          image: ghcr.io/YOUR_ORG/creditcard-worker:latest
+          image: rizkyian78/e-ticketing-creditcard-worker:10ced76ff2daf0e3c252cf88844e341bd109fb4
           envFrom:
             - secretRef:
                 name: app-secrets

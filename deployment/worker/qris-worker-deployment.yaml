@@ -12,12 +12,10 @@ spec:
     metadata:
       labels:
         app: qris-worker
-    spec:
-      imagePullSecrets:
-        - name: dockerhub-secret   # remove if image is public
+    spec:  # remove if image is public
       containers:
         - name: qris-worker
-          image: rizkyian78/qris-worker:<COMMIT_SHA>
+          image: rizkyian78/e-ticketing-qris-worker:10ced76ff2daf0e3c252cf88844e341bd109fb4
           imagePullPolicy: IfNotPresent
           envFrom:
             - secretRef:

@@ -11,7 +11,7 @@ permissions:
 env:
   SONAR_PROJECT_KEY: rizkyian78_e-ticket
   IMAGE_PREFIX: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/e-ticketing
-  IMAGE_TAG: ${{ github.sha }}
+  IMAGE_TAG: ${GITHUB_SHA::7}
 
 jobs:
 
