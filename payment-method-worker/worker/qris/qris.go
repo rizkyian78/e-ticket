@@ -6,7 +6,6 @@ import (
 	"eticketing/worker/integrations/qris"
 	"eticketing/worker/storage"
 	"log"
-	"time"
 )
 
 type QRISHandler struct {
@@ -38,8 +37,6 @@ func (h *QRISHandler) Process(
 	if err != nil {
 		return nil, err
 	}
-
-	time.Sleep(5 * time.Second)
 
 	if err := h.store.SaveRecordQRIS(ctx, storage.PaymentRecord{
 		InquiryID:     p.InquiryID,

@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from app.repositories.ledger_repository import LedgerRepository
 
+
 class LedgerService:
     def __init__(self, db):
         self.repo = LedgerRepository(db)

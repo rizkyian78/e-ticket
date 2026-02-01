@@ -5,6 +5,7 @@ from app.services.ledger_service import LedgerService
 
 router = APIRouter()
 
+
 @router.post("/ledger/entries")
 def create_ledger(
     req: LedgerCreateRequest,
