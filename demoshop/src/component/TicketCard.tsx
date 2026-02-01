@@ -1,47 +1,70 @@
-import type { TicketType } from '../types';
+import { Minus, Plus } from 'lucide-react';
+import { Ticket } from '@/models';
 
-export const TicketCard = ({
-  ticket,
-  qty,
-  onChange,
-}: {
-  ticket: TicketType;
-  qty: number;
-  onChange: (qty: number) => void;
-}) => (
-  <div className="rounded-xl bg-white p-4 shadow">
+
+
+interface TicketCardProps {
+  ticket: Ticket;
+  quantity: number;
+  remainingQuota: number;
+  onQuantityChange: (change: number) => void;
+}
+
+export function TicketCard({ ticket, quantity, remainingQuota, onQuantityChange }: TicketCardProps) {
+  const isDisabled = remainingQuota === 0;
+  const canIncrease = quantity < remainingQuota;
+  const canDecrease = quantity > 0;
+
+
+  return (
     <div
-      className={`h-32 rounded-lg bg-gradient-to-br ${ticket.color} flex items-center justify-center text-4xl font-bold text-white`}
+      className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 transition-all duration-200 ${
+        isDisabled ? 'opacity-50' : 'hover:shadow-md'
+      }`}
     >
-      {ticket.code[0]}
-    </div>
-    <div className="mt-4 space-y-1">
-      <div className="flex justify-between">
-        <h3 className="font-semibold">{ticket.name}</h3>
-        <span className="rounded bg-gray-100 px-2 py-1 text-xs">{ticket.quota} left</span>
+      {/* Ticket Name */}
+      <h3 className="text-lg text-gray-900 mb-2">{ticket.name}</h3>
+
+      {/* Price */}
+      <p className="text-2xl text-gray-900 mb-3">
+        AED {ticket.amount}
+      </p>
+
+      {/* Remaining Quota */}
+      <p className="text-sm text-gray-600 mb-4">
+        {remainingQuota > 0 ? `${remainingQuota} tickets remaining` : 'Sold out'}
+      </p>
+
+      {/* Quantity Selector */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => onQuantityChange(-1)}
+          disabled={!canDecrease || isDisabled}
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+            canDecrease && !isDisabled
+              ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+              : 'bg-gray-50 text-gray-300 cursor-not-allowed'
+          }`}
+          aria-label="Decrease quantity"
+        >
+          <Minus className="w-4 h-4" />
+        </button>
+
+        <span className="text-lg text-gray-900 min-w-[2rem] text-center">{quantity}</span>
+
+        <button
+          onClick={() => onQuantityChange(1)}
+          disabled={!canIncrease || isDisabled}
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+            canIncrease && !isDisabled
+              ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+              : 'bg-gray-50 text-gray-300 cursor-not-allowed'
+          }`}
+          aria-label="Increase quantity"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
       </div>
-      <p className="text-xs text-gray-500">Code: {ticket.code}</p>
-      <p className="text-sm text-gray-500">{ticket.description}</p>
-      <div className="flex items-center justify-between pt-2">
-        <span className="font-semibold">{ticket.price} AED</span>
-        <div className="flex items-center gap-2">
-          <button
-            data-testid={`dec-${ticket.id}`}
-            onClick={() => onChange(Math.max(0, qty - 1))}
-            className="btn"
-          >
-            -
-          </button>
-          <span data-testid={`qty-${ticket.id}`}>{qty}</span>
-          <button
-            data-testid={`inc-${ticket.id}`}
-            onClick={() => onChange(qty + 1)}
-            className="btn"
-          >
-            +
-          </button>
-        </div>
-      </div>
     </div>
-  </div>
-);
+  );
+}

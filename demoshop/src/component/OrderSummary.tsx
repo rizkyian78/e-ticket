@@ -1,31 +1,56 @@
-import type { TicketType } from '../types';
+import { Ticket } from "@/models";
 
-export const OrderSummary = ({
-  tickets,
-  quantities,
-}: {
-  tickets: TicketType[];
+
+
+interface OrderSummaryProps {
+  tickets: Ticket[];
   quantities: Record<string, number>;
-}) => {
-  const total = tickets.reduce((sum, t) => sum + (quantities[t.id] || 0) * t.price, 0);
+  totalAmount: number;
+}
+
+export function OrderSummary({ tickets, quantities, totalAmount }: OrderSummaryProps) {
+  const selectedTickets = tickets.filter((ticket) => (quantities[ticket.id] || 0) > 0);
+
   return (
-    <div className="space-y-3 rounded-xl bg-white p-6 shadow">
-      <h2 className="text-lg font-semibold">Order Summary</h2>
-      {tickets.map(
-        (t) =>
-          quantities[t.id] > 0 && (
-            <div key={t.id} className="flex justify-between text-sm">
-              <span>
-                {t.name} x{quantities[t.id]}
-              </span>
-              <span>{quantities[t.id] * t.price} AED</span>
-            </div>
-          )
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <h2 className="text-lg text-gray-900 mb-4">Order Summary</h2>
+
+      {selectedTickets.length === 0 ? (
+        <p className="text-sm text-gray-500">No tickets selected</p>
+      ) : (
+        <div className="space-y-4">
+          {/* Selected Tickets */}
+          <div className="space-y-3">
+            {selectedTickets.map((ticket) => {
+              const qty = quantities[ticket.id];
+              const subtotal = ticket.amount * qty;
+
+              return (
+                <div key={ticket.id} className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-900">{ticket.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {qty} × {ticket.currency} {ticket.amount}
+                    </p>
+                  </div>
+                  <p className="text-sm text-gray-900">AED {subtotal}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-gray-200" />
+
+          {/* Total */}
+          <div className="flex justify-between items-center">
+            <p className="text-lg text-gray-900">Total Amount</p>
+            <p className="text-xl text-indigo-600">
+              AED {totalAmount}
+            </p>
+          </div>
+        </div>
       )}
-      <div className="flex justify-between border-t pt-3 font-semibold">
-        <span>Total</span>
-        <span>{total} AED</span>
-      </div>
     </div>
   );
-};
+}

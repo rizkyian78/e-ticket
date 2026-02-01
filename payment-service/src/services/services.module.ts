@@ -11,6 +11,7 @@ import { QRPaymentHandler } from 'src/processor/handlers/qr-payment.handler';
 import { CardHandler } from 'src/processor/handlers/creditcard.handler';
 import { HttpModule } from '@nestjs/axios';
 import { LedgerStrategyModule } from './ledger/ledger.module';
+import { SequelizeMerchantRepository } from 'src/repository/impl/merchantinterfaceimpl.repository';
 
 @Module({
   imports: [
@@ -35,6 +36,10 @@ import { LedgerStrategyModule } from './ledger/ledger.module';
     {
       provide: 'InquiryRepository',
       useClass: SequelizeInquiryRepository,
+    },
+    {
+      provide: 'MerchantRepository',
+      useClass: SequelizeMerchantRepository,
     },
     {
       provide: 'TicketRepository',

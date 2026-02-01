@@ -9,9 +9,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 import dayjs from 'dayjs';
 import { Sequelize } from 'sequelize';
-import { InquiryRequest, Order } from 'src/dto/inquiry.dto';
+import { InquiryRequestDto, OrderDto } from 'src/dto/inquiry.dto';
 import { SEQUELIZE } from 'src/providers/database.module';
 import { InquiryRepository } from 'src/repository/inquiryinterface.repository';
+import { MerchantsRepository } from 'src/repository/merchantsinterface.repository';
 import { TicketRepository } from 'src/repository/ticketinterface.repository';
 
 @Injectable()
@@ -25,12 +26,14 @@ export class InquiriesService {
     @Inject('TicketRepository')
     private readonly ticketRepo: TicketRepository,
 
+    @Inject('MerchantRepository')
+    private readonly merchantRepo: MerchantsRepository,
     @Inject(SEQUELIZE)
     private readonly sequelize: Sequelize,
 
     private readonly config: ConfigService,
   ) {}
-  async createInquiry(body: InquiryRequest) {
+  async createInquiry(body: InquiryRequestDto) {
     this.validateAmount(body);
 
     try {
@@ -54,10 +57,10 @@ export class InquiriesService {
             currency: body.currency,
             status: 'PENDING',
             total_amount: BigInt(body.amount),
-            ticket_id: body.ticket_id,
             locked_amount: BigInt(0),
             reference_id: body.reference_id,
             orders: body.order,
+            return_url: body.return_url,
             expired_at: dayjs()
               .add(this.config.get('INQUIRY_EXPIRATION_TIME') ?? 9000, 'second')
               .toDate(),
@@ -104,7 +107,7 @@ export class InquiriesService {
     }
   }
 
-  validateAmount(body: InquiryRequest) {
+  validateAmount(body: InquiryRequestDto) {
     if (body.order && body.order.length > 0) {
       const sum = this.sumOrderItemAmount(body.order);
       const req = BigInt(body.amount);
@@ -115,7 +118,7 @@ export class InquiriesService {
     }
   }
 
-  async validateTicket(orders: Order[]) {
+  async validateTicket(orders: OrderDto[]) {
     for (const order of orders) {
       const ticket = await this.ticketRepo.findTicketById(order.ticket_id);
       const remaining_quota =
@@ -126,7 +129,7 @@ export class InquiriesService {
     }
   }
 
-  sumOrderItemAmount(order: Order[]): bigint {
+  sumOrderItemAmount(order: OrderDto[]): bigint {
     return order.reduce((total, item) => {
       const amount = BigInt(item.amount);
       const qty = BigInt(item.reserving_quota);
@@ -135,6 +138,8 @@ export class InquiriesService {
   }
 
   mapResponse(inquiry: any) {
+    const baseUrl =
+      this.config.get('CHECKOUT_BASE_URL') ?? 'http://localhost:3000';
     return {
       id: inquiry.id,
       createdTime: inquiry.created_at,
@@ -144,12 +149,8 @@ export class InquiriesService {
       currency: inquiry.currency,
       paymentSources: ['banktransfer', 'qris', 'creditcard', 'debitcard'],
       urls: {
-        selections:
-          `${this.config.get('FRONTEND_URL') ?? 'http://localhost:3000'}/inquiry/` +
-          inquiry.id,
-        checkout:
-          `${this.config.get('FRONTEND_URL') ?? 'http://localhost:3000'}/inquiry/` +
-          inquiry.id,
+        selections: baseUrl + `checkout/${inquiry.id}`,
+        checkout: baseUrl + `checkout/${inquiry.id}`,
       },
     };
   }

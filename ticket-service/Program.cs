@@ -3,6 +3,21 @@ using TicketService.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy
+            .WithOrigins(
+                "http://localhost:3000",
+                "http://localhost:5173",
+                "https://your-frontend-domain.com"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 // Controllers
 builder.Services.AddControllers();
 
@@ -29,6 +44,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseCors("AllowFrontend"); // ✅ REQUIRED
 
 app.MapControllers();
 app.Run();
