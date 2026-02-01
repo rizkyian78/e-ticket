@@ -11,7 +11,6 @@ permissions:
 env:
   SONAR_PROJECT_KEY: rizkyian78_e-ticket
   IMAGE_PREFIX: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/e-ticketing
-  IMAGE_TAG: ${GITHUB_SHA::7}
 
 jobs:
 
@@ -25,8 +24,6 @@ jobs:
     environment: e-ticket
 
     steps:
-      - name: Set image tag
-        run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
       - uses: actions/checkout@v4
 
 # ---------- FRONTEND ----------
@@ -149,7 +146,9 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-# =========================
+      - name: Set image tag
+        run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          # =========================
 # BUILD & PUSH IMAGES
 # =========================
       - name: Build & Push Frontend Image
@@ -181,7 +180,6 @@ jobs:
           docker push $IMAGE_PREFIX-ticket:$IMAGE_TAG
       - name: Build & Push Creditcard Worker Image
         run: |
-          IMAGE_TAG=${GITHUB_SHA::7}
 
           docker build \
           -t $IMAGE_PREFIX-creditcard-worker:$IMAGE_TAG \
@@ -191,8 +189,6 @@ jobs:
           docker push $IMAGE_PREFIX-creditcard-worker:$IMAGE_TAG
       - name: Build & Push QRIS Worker Image
         run: |
-          IMAGE_TAG=${GITHUB_SHA::7}
-
           docker build \
           --build-arg CMD_NAME=qris \
           -t $IMAGE_PREFIX-qris-worker:$IMAGE_TAG \
@@ -201,8 +197,6 @@ jobs:
           docker push $IMAGE_PREFIX-qris-worker:$IMAGE_TAG
       - name: Build & Push Debitcard Worker Image
         run: |
-          IMAGE_TAG=${GITHUB_SHA::7}
-
           docker build \
           --build-arg CMD_NAME=debitcard \
           -t $IMAGE_PREFIX-debitcard-worker:$IMAGE_TAG \
