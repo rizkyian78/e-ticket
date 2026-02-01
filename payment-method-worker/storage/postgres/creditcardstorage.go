@@ -4,6 +4,7 @@ import (
 	"context"
 	"eticketing/worker/storage"
 )
+
 func (p *PostgresStore) SaveRecordCC(
 	ctx context.Context,
 	data storage.PaymentRecord,
@@ -17,7 +18,6 @@ func (p *PostgresStore) SaveRecordCC(
 		currency,
 		method,
 		status,
-		record_log,
 		reference_id
 	) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
 	`
