@@ -2,11 +2,11 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { PaymentRequest } from 'src/dto/payment.dto';
 import { PaymentsService } from 'src/services/payments/payments.service';
 
-@Controller('payment')
+@Controller('api/inquiry/transaction')
 export class PaymentController {
   constructor(private readonly paymentService: PaymentsService) {}
 
-  @Post('submit')
+  @Post('pay')
   async submitPayment(@Body() body: PaymentRequest) {
     return this.paymentService.transactionSubmitted(body);
   }

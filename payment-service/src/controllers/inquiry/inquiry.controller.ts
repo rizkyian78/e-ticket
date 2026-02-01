@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { InquiryRequest } from 'src/dto/inquiry.dto';
 import { InquiriesService } from '../../services/inquiries/inquiries.service';
 
-@Controller('inquiry')
+@Controller('api/inquiry/transaction')
 export class InquiryController {
   constructor(private readonly inquiriesService: InquiriesService) {}
   @Post('submit')
