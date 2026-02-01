@@ -6,7 +6,6 @@ class LedgerRepository:
     def __init__(self, db):
         self.db = db
 
-
     def insert_entries(
         self,
         transaction_id: str,
