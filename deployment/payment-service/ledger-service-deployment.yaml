@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: ledger-service
-          image: ghcr.io/YOUR_ORG/ledger-service:latest
+          image: rizkyian78/e-ticketing-ledger:10ced76ff2daf0e3c252cf88844e341bd109fb4
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
           envFrom:

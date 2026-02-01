@@ -6,6 +6,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import dayjs from 'dayjs';
 import { Sequelize } from 'sequelize';
 import { InquiryRequest, Order } from 'src/dto/inquiry.dto';
@@ -26,6 +27,8 @@ export class InquiriesService {
 
     @Inject(SEQUELIZE)
     private readonly sequelize: Sequelize,
+
+    private readonly config: ConfigService,
   ) {}
   async createInquiry(body: InquiryRequest) {
     this.validateAmount(body);
@@ -55,7 +58,9 @@ export class InquiriesService {
             locked_amount: BigInt(0),
             reference_id: body.reference_id,
             orders: body.order,
-            expired_at: dayjs().add(9000, 'second').toDate(),
+            expired_at: dayjs()
+              .add(this.config.get('INQUIRY_EXPIRATION_TIME') ?? 9000, 'second')
+              .toDate(),
             customer: {
               email: body.customer.email,
               name: body.customer.name,
@@ -139,8 +144,12 @@ export class InquiriesService {
       currency: inquiry.currency,
       paymentSources: ['banktransfer', 'qris', 'creditcard', 'debitcard'],
       urls: {
-        selections: 'http://localhost:3000/inquiry/' + inquiry.id,
-        checkout: 'http://localhost:3000/inquiry/' + inquiry.id,
+        selections:
+          `${this.config.get('FRONTEND_URL') ?? 'http://localhost:3000'}/inquiry/` +
+          inquiry.id,
+        checkout:
+          `${this.config.get('FRONTEND_URL') ?? 'http://localhost:3000'}/inquiry/` +
+          inquiry.id,
       },
     };
   }

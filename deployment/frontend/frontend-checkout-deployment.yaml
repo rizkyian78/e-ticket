@@ -15,6 +15,7 @@ spec:
     spec:
       containers:
         - name: checkout-app
-          image: ghcr.io/YOUR_ORG/checkout-app:latest
+          image: rizkyian78/e-ticketing-checkout-app:10ced76ff2daf0e3c252cf88844e341bd109fb4
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000

@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: payment-service
-          image: ghcr.io/YOUR_ORG/payment-service:latest
+          image: rizkyian78/e-ticketing-payment:10ced76ff2daf0e3c252cf88844e341bd109fb4
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
           envFrom:
