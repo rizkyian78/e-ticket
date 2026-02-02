@@ -95,7 +95,7 @@ export class InquiriesService {
       return {
         ...data,
         // Masked Email and phone
-        paymentSources: ['banktransfer', 'qris', 'creditcard', 'debitcard'],
+        paymentSources: ['qris', 'creditcard', 'debitcard'],
       };
     } catch (err) {
       this.logger.error(err);

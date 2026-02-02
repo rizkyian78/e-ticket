@@ -80,9 +80,21 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Frontend Coverage
+      - name: Demoshop Coverage
         run: |
           cd demoshop
+          yarn install
+          yarn test --coverage
+
+      - name: Checkout App Coverage
+        run: |
+          cd checkout-app
+          yarn install
+          yarn test --coverage
+
+      - name: Backoffice Coverage
+        run: |
+          cd checkout-app
           yarn install
           yarn test --coverage
 
