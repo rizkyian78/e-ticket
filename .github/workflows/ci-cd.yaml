@@ -94,7 +94,7 @@ jobs:
 
       - name: Backoffice Coverage
         run: |
-          cd checkout-app
+          cd backoffice-app
           yarn install
           yarn test --coverage
 
