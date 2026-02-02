@@ -45,7 +45,8 @@ export function CreditCardPayment({ inquiry }: { inquiry: InquiryResponse }) {
   };
 
   const formatCardNumber = (value: string) => {
-    const cleaned = value.replace(/\s/g, '');
+    const cleaned = value.replace(/\D/g, '');
+
     const brand = detectCardBrand(cleaned);
     setCardBrand(brand);
 

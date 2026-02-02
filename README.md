@@ -8,6 +8,11 @@ Note:
 Custom domain + Cloudflare + cert-manager (DNS-01) is configured,
 but registrar DNS propagation exceeded assignment time constraints.
 
+## Styling
+This project uses Tailwind CSS strictly as a utility layer.
+No component libraries or prebuilt UI kits are used.
+All layout and visual decisions are custom and minimal.
+
 ## Architecture Diagram
 
 ```
@@ -181,8 +186,11 @@ Credit: Ticket Sales Revenue              AED XXX
 ### Prerequisites
 
 - Docker & Docker Compose installed
-- Node.js 18+ (for frontend local development)
+- Node.js 20+ (for frontend & backend local development)
 - Git
+- Requires .NET 8 SDK
+- Go 1.25.5
+- Python 3.14.2
 
 ### Step 1: Clone Repository
 
@@ -209,13 +217,77 @@ docker-compose up -d
 This will start:
 
 - PostgreSQL database (port 5432)
-- RabbitMQ (port 5672w)
+- RabbitMQ (port 5672)
 
 ### Step 4: Database Migration
 
 ```bash
 # Run migrations
-folder called init_mgrations you can copy that and backup in the postgres
+folder called init_mgrations you can copy that and restore in the postgres
+```
+
+### Step 5: Run Demoshop
+
+using yarn or npm
+
+```bash
+cd demoshop
+yarn install && yarn dev
+```
+
+### Step 6: Run checkout page
+
+using yarn
+
+```bash
+cd checkout-app
+yarn install && yarn dev
+```
+
+### Step 7: Run payment-service
+```bash
+cd payment-service
+yarn install && yarn start:dev
+```
+
+### Step 8: Run worker
+```bash
+cd payment-method-worker
+go install 
+go run cmd/<payment_method>/main.go
+```
+
+### Step 9: Run ledger-service
+```bash
+cd ledger-service
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port <port>
+```
+
+
+### Step 10: Run ticket-service
+change below in appsettings.json
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=<ip>;Port=<port>;Database=ipg;Username=<username>;Password=<password>"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  }
+}
+
+```
+```bash
+cd ticket-service
+dotnet restore 
+dotnet run
 ```
 
 
@@ -339,58 +411,260 @@ sudo certbot --nginx -d ticketing.yourdomain.com
 ```
 
 
-## CI/CD Pipeline Explanation
-
-### Current Pipeline
-
-The project uses **GitHub Actions** for continuous integration and deployment.
-
-**Pipeline Stages**
+## CI/CD Pipeline Flow Diagram
 
 ```
-┌──────────────┐
-│ Code Push    │
-│ to main      │
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│ 1. Lint      │  ESLint, Prettier, StyleCop
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│ 2. Build     │  .NET build, npm build, Python venv
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│ 3. Test      │  Unit tests, Integration tests
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│ 4. Docker    │  Build images for all services
-│    Build     │
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│ 5. Tag       │  Tag with commit hash
-│              │  Format: service-name:abc1234
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│ 6. Push      │  Push to Docker Hub / ECR
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│ 7. Deploy    │  Update K8s deployments (optional)
-└──────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                        TRIGGER EVENTS                               │
+└────────────┬────────────────────────────────────┬───────────────────┘
+             │                                    │
+             │ Pull Request                       │ Push to main
+             ▼                                    ▼
+┌────────────────────────────────┐  ┌────────────────────────────────────┐
+│     PR PIPELINE                │  │    MERGE PIPELINE                  │
+│  (pr-tests)                    │  │  (merge-tests-coverage-sonar)      │
+└────────────┬───────────────────┘  └────────────┬───────────────────────┘
+             │                                   │
+             ▼                                   ▼
+┌────────────────────────────────┐  ┌──────────────────────────────────────┐
+│  1. CHECKOUT CODE              │  │  1. CHECKOUT CODE                    │
+│     actions/checkout@v4        │  │     actions/checkout@v4              │
+└────────────┬───────────────────┘  └────────────┬─────────────────────────┘
+             │                                   │
+             ▼                                   ▼
+┌────────────────────────────────┐  ┌──────────────────────────────────────┐
+│  2. SETUP RUNTIMES             │  │  2. SETUP RUNTIMES                   │
+│     • Node.js 20               │  │     • Node.js 20                     │
+│     • Python 3.11              │  │     • Python 3.11                    │
+│     • .NET 8.0.x               │  │     • .NET 8.0.x                     │
+└────────────┬───────────────────┘  └────────────┬─────────────────────────┘
+             │                                   │
+             ▼                                   ▼
+┌────────────────────────────────┐  ┌──────────────────────────────────────┐
+│  3. RUN TESTS                  │  │  3. RUN TESTS WITH COVERAGE          │
+│                                │  │                                      │
+│  ┌──────────────────────────┐ │  │  ┌────────────────────────────────┐ │
+│  │ Frontend (Demoshop)      │ │  │  │ Demoshop                       │ │
+│  │  • yarn install          │ │  │  │  • yarn test --coverage        │ │
+│  │  • yarn lint             │ │  │  │                                │ │
+│  │  • yarn test             │ │  │  │ Checkout App                   │ │
+│  └──────────────────────────┘ │  │  │  • yarn test --coverage        │ │
+│                                │  │  │                                │ │
+│  ┌──────────────────────────┐ │  │  │ Backoffice App                 │ │
+│  │ Payment Service          │ │  │  │  • yarn test --coverage        │ │
+│  │  • yarn install          │ │  │  │                                │ │
+│  │  • yarn lint             │ │  │  │ Payment Service                │ │
+│  │  • yarn test             │ │  │  │  • yarn test --coverage        │ │
+│  └──────────────────────────┘ │  │  │                                │ │
+│                                │  │  │ Ledger Service                 │ │
+│  ┌──────────────────────────┐ │  │  │  • pytest --cov                │ │
+│  │ Ledger Service           │ │  │  │  • flake8 (linting)            │ │
+│  │  • pip install           │ │  │  │                                │ │
+│  │  • pytest                │ │  │  │ Ticket Service                 │ │
+│  └──────────────────────────┘ │  │  │  • dotnet test (with coverage) │ │
+│                                │  │  └────────────────────────────────┘ │
+│  ┌──────────────────────────┐ │  └────────────┬─────────────────────────┘
+│  │ Ticket Service (.NET)    │ │               │
+│  │  • dotnet restore        │ │               ▼
+│  │  • dotnet test           │ │  ┌──────────────────────────────────────┐
+│  └──────────────────────────┘ │  │  4. SONARCLOUD ANALYSIS              │
+└────────────┬───────────────────┘  │                                      │
+             │                      │  ┌────────────────────────────────┐ │
+             ▼                      │  │ SonarCloud Scan                │ │
+┌────────────────────────────────┐  │  │  • Project: rizkyian78_e-ticket│ │
+│  4. COMPLETE                   │  │  │  • Organization: rizkyian78    │ │
+│     ✓ All tests passed         │  │  └────────────────────────────────┘ │
+└────────────────────────────────┘  │                                      │
+                                    │  ┌────────────────────────────────┐ │
+                                    │  │ Quality Gate Check             │ │
+                                    │  │  • Timeout: 5 minutes          │ │
+                                    │  │  • Continue on error           │ │
+                                    │  └────────────────────────────────┘ │
+                                    └────────────┬─────────────────────────┘
+                                                 │
+                                                 ▼
+                                    ┌──────────────────────────────────────┐
+                                    │  5. DOCKER LOGIN                     │
+                                    │                                      │
+                                    │  • Login to Docker Hub               │
+                                    │  • Set IMAGE_TAG = commit SHA (7ch)  │
+                                    └────────────┬─────────────────────────┘
+                                                 │
+                                                 ▼
+                                    ┌──────────────────────────────────────┐
+                                    │  6. BUILD & PUSH DOCKER IMAGES       │
+                                    │     (9 images in sequence)           │
+                                    │                                      │
+                                    │  ┌────────────────────────────────┐ │
+                                    │  │ 1. Demoshop Frontend           │ │
+                                    │  │    • Build with API URLs       │ │
+                                    │  │    • Push to DockerHub         │ │
+                                    │  └────────────────────────────────┘ │
+                                    │                                      │
+                                    │  ┌────────────────────────────────┐ │
+                                    │  │ 2. Checkout App Frontend       │ │
+                                    │  │    • Build with base URL       │ │
+                                    │  │    • Push to DockerHub         │ │
+                                    │  └────────────────────────────────┘ │
+                                    │                                      │
+                                    │  ┌────────────────────────────────┐ │
+                                    │  │ 3. Backoffice App Frontend     │ │
+                                    │  │    • Build                     │ │
+                                    │  │    • Push to DockerHub         │ │
+                                    │  └────────────────────────────────┘ │
+                                    │                                      │
+                                    │  ┌────────────────────────────────┐ │
+                                    │  │ 4. Payment Service             │ │
+                                    │  │    • Build                     │ │
+                                    │  │    • Push to DockerHub         │ │
+                                    │  └────────────────────────────────┘ │
+                                    │                                      │
+                                    │  ┌────────────────────────────────┐ │
+                                    │  │ 5. Ledger Service              │ │
+                                    │  │    • Build                     │ │
+                                    │  │    • Push to DockerHub         │ │
+                                    │  └────────────────────────────────┘ │
+                                    │                                      │
+                                    │  ┌────────────────────────────────┐ │
+                                    │  │ 6. Ticket Service              │ │
+                                    │  │    • Build                     │ │
+                                    │  │    • Push to DockerHub         │ │
+                                    │  └────────────────────────────────┘ │
+                                    │                                      │
+                                    │  ┌────────────────────────────────┐ │
+                                    │  │ 7. Credit Card Worker          │ │
+                                    │  │    • Build with CMD=creditcard │ │
+                                    │  │    • Push to DockerHub         │ │
+                                    │  └────────────────────────────────┘ │
+                                    │                                      │
+                                    │  ┌────────────────────────────────┐ │
+                                    │  │ 8. QRIS Worker                 │ │
+                                    │  │    • Build with CMD=qris       │ │
+                                    │  │    • Push to DockerHub         │ │
+                                    │  └────────────────────────────────┘ │
+                                    │                                      │
+                                    │  ┌────────────────────────────────┐ │
+                                    │  │ 9. Debit Card Worker           │ │
+                                    │  │    • Build with CMD=debitcard  │ │
+                                    │  │    • Push to DockerHub         │ │
+                                    │  └────────────────────────────────┘ │
+                                    └────────────┬─────────────────────────┘
+                                                 │
+                                                 ▼
+                                    ┌──────────────────────────────────────┐
+                                    │  7. UPLOAD COVERAGE ARTIFACTS        │
+                                    │                                      │
+                                    │  • demoshop/coverage                 │
+                                    │  • payment-service/coverage          │
+                                    │  • ledger-service/coverage.xml       │
+                                    │  • ticket-service/**/coverage.xml    │
+                                    │                                      │
+                                    │  Artifact: full-code-coverage        │
+                                    └────────────┬─────────────────────────┘
+                                                 │
+                                                 ▼
+                                    ┌──────────────────────────────────────┐
+                                    │  8. COMPLETE                         │
+                                    │     ✓ All images pushed              │
+                                    │     ✓ Coverage uploaded              │
+                                    │     ✓ Ready for deployment           │
+                                    └──────────────────────────────────────┘
 ```
 
+---
+
+## Pipeline Summary
+
+### Pull Request Pipeline (Fast Feedback)
+
+**Purpose:** Quick validation of code changes  
+
+**Execution Time:** ~5-8 minutes  
+
+**Components:**
+
+- 3 Frontend apps (Demoshop only)
+- 1 Payment service (Node.js)
+- 1 Ledger service (Python)
+- 1 Ticket service (.NET)
+
+**Key Characteristics:**
+
+- Linting allowed to fail (`|| true`)
+- Fast feedback for developers
+- No Docker build (faster pipeline)
+- No code coverage
+
+---
+
+### Merge Pipeline (Production Release)
+
+**Purpose:** Full validation, quality gates, and deployment preparation  
+
+**Execution Time:** ~25-35 minutes  
+
+**Components:**
+
+- **Tests with Coverage:** 6 services (Demoshop, Checkout, Backoffice, Payment, Ledger, Ticket)
+- **Code Quality:** SonarCloud scan + Quality Gate
+- **Container Images:** 9 Docker images
+- **Artifacts:** Coverage reports uploaded
+
+**Docker Images Built:**
+
+| # | Image Name | Base Service | Purpose |
+| --- | --- | --- | --- |
+| 1 | demoshop | demoshop | Main customer-facing ticket shop |
+| 2 | checkout-app | checkout-app | Checkout flow frontend |
+| 3 | backoffice-app | backoffice-app | Admin/management interface |
+| 4 | payment | payment-service | Payment orchestration API |
+| 5 | ledger | ledger-service | Financial ledger API |
+| 6 | ticket | ticket-service | Ticket inventory API |
+| 7 | creditcard-worker | payment-method-worker | Credit card processing worker |
+| 8 | qris-worker | payment-method-worker | QRIS payment processing worker |
+| 9 | debitcard-worker | payment-method-worker | Debit card processing worker |
+
+**Image Tagging Strategy:**
+
+```
+docker.io/<username>/e-ticketing-<service>:<7-char-commit-hash>
+Example: docker.io/rizkyian78/e-ticketing-demoshop:a3f7b2c
+```
+
+---
+
+## Key Pipeline Features
+
+**Quality Gates**
+
+- ✅ Automated linting (ESLint, Flake8, StyleCop)
+- ✅ Unit and integration test coverage
+- ✅ SonarCloud code quality analysis
+- ✅ Quality Gate check (continues even if failed)
+
+**Security Best Practices**
+
+- 🔐 Secrets stored in GitHub Secrets (DOCKERHUB_USERNAME, DOCKERHUB_TOKEN, SONAR_TOKEN)
+- 🔐 API keys passed as build arguments
+- 🔐 No secrets committed to repository
+
+**Performance Optimizations Needed**
+
+- ⚠️ Sequential Docker builds (not parallelized)
+- ⚠️ `--no-cache` flag increases build time
+- ⚠️ Could benefit from build matrix for parallel execution
+
+**Suggested Improvements**
+
+1. Parallelize Docker builds using matrix strategy
+2. Enable Docker layer caching
+3. Add semantic versioning alongside commit hash
+4. Add deployment step to Kubernetes/K3s
+5. Add notification step (Slack, email)
+
+---
+
+This pipeline demonstrates a **production-grade CI/CD workflow** with comprehensive testing, quality assurance, and multi-service containerization ready for orchestrated deployment.
 ### Known Limitations
 
 **Current Approach**
