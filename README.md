@@ -351,13 +351,101 @@ kubectl create secret generic api-credentials \
   -n ticketing
 
 # Apply Kubernetes manifests
-kubectl apply -f k8s/database.yaml
-kubectl apply -f k8s/ticket-service.yaml
-kubectl apply -f k8s/payment-service.yaml
-kubectl apply -f k8s/ledger-service.yaml
-kubectl apply -f k8s/frontend.yaml
-kubectl apply -f k8s/ingress.yaml
+kubectl apply -f paymentservice/ --namespace e-ticket
+kubectl apply -f worker/ --namespace e-ticket
+kubectl apply -f frontend/ --namespace e-ticket
 ```
+## utils_server
+
+The `utils_server` directory does not contain Kubernetes manifests.
+It contains operational shell scripts used for cluster maintenance.
+
+### remove_unrunning_pods.sh
+
+Deletes all pods in the `e-ticket` namespace that are not in `Running` state.
+
+Usage:
+
+```bash
+chmod +x utils_server/remove_unrunning_pods.sh
+./utils_server/remove_unrunning_pods.sh
+```
+
+## Kubernetes Visualization (k9s)
+
+This project uses **k9s** as a lightweight, terminal-based UI to visualize and interact with Kubernetes resources during development and troubleshooting.
+
+k9s is used **only as an operational aid** and is not required for application runtime or CI/CD execution.
+
+---
+
+### How to Use k9s with This Project
+
+Ensure your `kubeconfig` is pointing to the correct cluster and context:
+
+```bash
+kubectl config current-context
+Launch k9s:
+
+k9s
+Recommended Usage for This Project
+Once inside k9s:
+
+Switch to Project Namespace
+:ns
+Select the namespace used by this project (e.g. e-ticket).
+
+View Core Resources
+:po    # Pods
+:dp    # Deployments
+:svc   # Services
+:ing   # Ingresses
+Inspect Logs
+Select a pod
+
+Press l to stream logs
+
+Press s to switch containers (if multiple)
+
+Restart a Deployment
+Navigate to deployments (:dp)
+
+Select deployment
+
+Press r to restart
+
+Delete Failed Pods
+Navigate to pods (:po)
+
+Select pod
+
+Press d to delete
+
+Common Debug Scenarios
+Worker not processing jobs
+
+Check worker pod logs
+
+Verify RabbitMQ pod is running
+
+Ensure payment-service is healthy
+
+Frontend not reachable
+
+Inspect ingress resource
+
+Verify frontend service endpoints
+
+Check pod readiness probes
+
+Pods stuck in CrashLoopBackOff
+
+View pod events
+
+Inspect container logs
+
+Restart or delete pod if needed
+
 
 ### Step 5: Configure TLS with Let's Encrypt
 
@@ -409,6 +497,8 @@ sudo systemctl reload nginx
 sudo apt install certbot python3-certbot-nginx
 sudo certbot --nginx -d ticketing.yourdomain.com
 ```
+
+
 
 
 ## CI/CD Pipeline Flow Diagram
@@ -714,8 +804,6 @@ jobs:
 - Security scanning integration
 
 ---
-
-##
 
 ## Assumptions & Trade-offs
 

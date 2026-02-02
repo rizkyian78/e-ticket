@@ -31,7 +31,6 @@ func (p *PostgresStore) SaveRecordCC(
 		data.Currency,
 		data.Method,
 		data.Status,
-		data.RecordLog,
 		data.ReferenceID,
 	)
 
