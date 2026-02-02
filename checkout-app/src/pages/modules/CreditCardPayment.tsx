@@ -73,7 +73,7 @@ export function CreditCardPayment({ inquiry }: { inquiry: InquiryResponse }) {
   };
 
   const handleCvcChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').substring(0, 4);
+    const value = e.target.value.replace(/\D/g, '').substring(0, 3);
     setCvc(value);
   };
 
