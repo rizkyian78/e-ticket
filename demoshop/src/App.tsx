@@ -18,7 +18,7 @@ export default function App() {
 
   useEffect(() => {
     const fetchTickets = async () => {
-      const res = await axios.get(env.ticketServiceUrl + '/api/ticket');
+      const res = await axios.get(env.ticketServiceUrl + 'api/ticket');
 
       const data: Ticket[] = res.data;
 
@@ -86,7 +86,7 @@ export default function App() {
         })),
     };
 
-    await axios.post(env.paymentServiceUrl + '/api/inquiry/submit', payload, {
+    await axios.post(env.paymentServiceUrl + 'api/inquiry/submit', payload, {
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.apiKey },
 
     }).then(res => {

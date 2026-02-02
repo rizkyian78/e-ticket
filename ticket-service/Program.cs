@@ -3,16 +3,19 @@ using TicketService.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var corsOrigins = builder.Configuration["CORS_ALLOWED_ORIGINS"]
+    ?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
+
+        if (corsOrigins is { Length: > 0 })
+        {
+            policy.WithOrigins(corsOrigins);
+        }
         policy
-            .WithOrigins(
-                "http://localhost:3000",
-                "http://localhost:5173",
-                "https://your-frontend-domain.com"
-            )
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
