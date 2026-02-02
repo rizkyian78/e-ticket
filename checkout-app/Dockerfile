@@ -32,4 +32,4 @@ COPY --from=builder /app/dist ./dist
 ENV PORT=3000
 EXPOSE 3000
 
-CMD ["serve", "-s", "dist", "-l", "3000"]
+CMD ["serve", "-s", "dist", "-l", "3000", "--single"]
