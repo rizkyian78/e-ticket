@@ -1,16 +1,19 @@
 import { PaymentMethodSelection } from '@/components/PaymentMethodSelection';
+import { InquiryResponse } from '@/model/inquiry.model';
 import { useNavigate, useParams } from 'react-router-dom';
 
 type PaymentMethod = 'creditcard' | 'debitcard' | 'qris' | null;
 
 
-export default function CheckoutPage() {
+export default function CheckoutPage({ inquiry }: { inquiry: InquiryResponse }) {
   const navigate = useNavigate();
 
   const { inquiryId } = useParams()
 
 
   const handleMethodSelect = (method: PaymentMethod) => {
+
+
     navigate(`/checkout/${inquiryId}/${method}`, {
 
     })
@@ -25,7 +28,7 @@ export default function CheckoutPage() {
 
     <div className={`w-full lg:max-w-[600px] lg:mx-auto`}>
       <PaymentMethodSelection
-        selectedMethod={"creditcard"}
+        inquiry={inquiry}
         onMethodSelect={handleMethodSelect}
       />
     </div>

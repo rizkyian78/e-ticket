@@ -1,35 +1,59 @@
 /* eslint-disable react-hooks/purity */
-import React, { useState, useEffect } from 'react';
+
+import React from 'react';
 import { ChevronLeft, QrCode } from 'lucide-react';
 import { PageTransition } from '../../components/PageTransition';
 import { Breadcrumb } from '../../components/Breadcrumb';
 import { InquiryResponse } from '@/model/inquiry.model';
+import { FailedScreen } from '@/components/FailedScreen';
+import { SuccessScreen } from '@/components/SuccessScreen';
+import { retrieveTransaction } from '@/services/useInquiry';
+import { useQuery } from '@tanstack/react-query';
+import { useParams } from 'react-router-dom';
 
 
 export function QRISPayment({ inquiry }: { inquiry: InquiryResponse }) {
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
 
-  console.log(inquiry)
+  const { transactionId } = useParams<{
+    transactionId: string;
+  }>();
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
 
-    return () => clearInterval(timer);
-  }, []);
+  const {
+    data,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["transaction", transactionId],
+    enabled: !!transactionId, // 🚨 REQUIRED
+    queryFn: () => retrieveTransaction(transactionId!),
+    refetchInterval: (query) => {
+      if (["SUCCESS", "FAILED"].includes(query?.state?.data?.status)) {
+        return false; // 🛑 stop polling
+      }
+      return 2000; // poll every 2s while pending
+    }
+  });
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+
+  if (isLoading) {
+    return <div>Loading…</div>;
+  }
+
+  if (isError) {
+    return <div>Failed to load transaction</div>;
+  }
+
+  if (data?.status === "SUCCESS") {
+    return (
+      <SuccessScreen paymentMethod={data.payment_method} inquiry={inquiry} />
+    );
+  }
+
+  if (data.status === "FAILED") {
+    return <FailedScreen inquiry={inquiry} />
+  }
+
 
   return (
     <PageTransition>
@@ -99,17 +123,12 @@ export function QRISPayment({ inquiry }: { inquiry: InquiryResponse }) {
           <div className="text-center mb-2">
             <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Amount</div>
             <div className="text-2xl font-semibold text-gray-900 dark:text-white">
-              IDR 150,000
+              {inquiry.currency} {inquiry.total_amount}
             </div>
           </div>
 
           {/* Timer */}
-          <div className="text-center">
-            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Time remaining</div>
-            <div className={`text-lg font-medium ${timeLeft < 60 ? 'text-red-600 dark:text-red-500' : 'text-gray-900 dark:text-white'}`}>
-              {formatTime(timeLeft)}
-            </div>
-          </div>
+
         </div>
 
         {/* Status */}
@@ -122,12 +141,7 @@ export function QRISPayment({ inquiry }: { inquiry: InquiryResponse }) {
           </div>
         </div>
 
-        {/* Cancel Button */}
-        <button
-          className="w-full py-3.5 px-4 rounded-lg font-medium border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all"
-        >
-          Cancel payment
-        </button>
+
 
         {/* Debug: Auto-complete button (hidden in production) */}
         <button

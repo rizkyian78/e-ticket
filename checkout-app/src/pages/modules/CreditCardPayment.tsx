@@ -200,8 +200,8 @@ export function CreditCardPayment({ inquiry }: { inquiry: InquiryResponse }) {
               "inquiryId": inquiry.id,
               "amount": inquiry.total_amount,
               "currency": inquiry.currency,
-              "paymentSource": "debitcard",
-              "idempotencyKey": `PURCHASE:${idempotentKey}:debitcard`,
+              "paymentSource": "creditcard",
+              "idempotencyKey": `PURCHASE:${idempotentKey}:creditcard`,
               "paymentSourceData": {
                 "cardToken": crypto.randomUUID(), // TODO TOKENIZE CARD
                 "cardNumber": cardNumber,
@@ -222,7 +222,7 @@ export function CreditCardPayment({ inquiry }: { inquiry: InquiryResponse }) {
             }
           `}
         >
-          Pay IDR 150,000
+          Pay {inquiry.currency} {inquiry.total_amount}
         </button>
       </div>
     </PageTransition>

@@ -39,10 +39,10 @@ function App() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
       <div className={`flex flex-col lg:flex-row gap-8 lg:gap-12 items-start ${'opacity-100'} transition-opacity duration-150`}>
         <Routes>
-          <Route path="/checkout/:inquiryId" element={<CheckoutPage />} />
+          <Route path="/checkout/:inquiryId" element={<CheckoutPage inquiry={data} />} />
           <Route path="/checkout/:inquiryId/creditcard" element={<CreditCardPayment inquiry={data} />} />
           <Route path="/checkout/:inquiryId/debitcard" element={<DebitCardPayment inquiry={data} />} />
-          <Route path="/checkout/:inquiryId/qris" element={<QRISPayment inquiry={data} />} />
+          <Route path="/checkout/:inquiryId/qris/:transactionId" element={<QRISPayment inquiry={data} />} />
           <Route path="/checkout/:inquiryId/transaction/:transactionId" element={<ProcessingScreenPayment inquiry={data} />} />
         </Routes>
 

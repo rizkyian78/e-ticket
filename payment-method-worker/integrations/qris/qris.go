@@ -29,7 +29,7 @@ func PayQRIS() (QRISResponse, error) {
 		return QRISResponse{}, err
 	}
 
-	time.Sleep(15 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	return simResp, nil
 }

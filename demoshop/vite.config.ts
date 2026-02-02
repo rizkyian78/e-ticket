@@ -4,14 +4,8 @@ import path from 'path';
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/demoshop/',
-  plugins: [
-    react({
-      babel: {
-        plugins: [['babel-plugin-react-compiler']],
-      },
-    }),
-  ],
+  base: '/',
+  plugins: [react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

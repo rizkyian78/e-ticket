@@ -2,15 +2,31 @@ import React from 'react';
 import { CreditCard, Landmark, QrCode, Lock, ChevronRight, Sparkles } from 'lucide-react';
 import { PageTransition } from './PageTransition';
 import { Breadcrumb } from './Breadcrumb';
+import { submitTransaction } from '@/services/useInquiry';
+import { useMutation } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { InquiryResponse } from '@/model/inquiry.model';
 
 type PaymentMethod = 'creditcard' | 'debitcard' | 'qris' | null;
 
 interface Props {
-  selectedMethod: PaymentMethod;
+  inquiry: InquiryResponse;
   onMethodSelect: (method: PaymentMethod) => void;
 }
+const idempotentKey = crypto.randomUUID()
 
-export function PaymentMethodSelection({ selectedMethod, onMethodSelect }: Props) {
+export function PaymentMethodSelection({ inquiry, onMethodSelect }: Props) {
+  const navigate = useNavigate();
+
+
+  const { mutate } = useMutation({
+    mutationFn: (payload: unknown) => {
+      return submitTransaction(payload)
+    },
+    onSuccess: (res) => {
+      navigate(`/checkout/${inquiry.id}/qris/${res.transaction_id}`)
+    }
+  })
   const methods = [
     { id: 'creditcard' as const, name: 'Credit Card', icon: CreditCard },
     { id: 'debitcard' as const, name: 'Debit Card', icon: Landmark },
@@ -24,16 +40,31 @@ export function PaymentMethodSelection({ selectedMethod, onMethodSelect }: Props
   };
 
   const [hoveredMethod, setHoveredMethod] = React.useState<PaymentMethod>(null);
-  const [tempSelected, setTempSelected] = React.useState<PaymentMethod>(selectedMethod);
+  const [tempSelected, setTempSelected] = React.useState<PaymentMethod>("creditcard");
   const displayedPromo = hoveredMethod || tempSelected;
 
   const handleMethodClick = (method: PaymentMethod) => {
+
     setTempSelected(method);
   };
 
   const handleContinue = () => {
-    if (tempSelected) {
+    if (tempSelected !== "qris") {
       onMethodSelect(tempSelected);
+    }
+
+    if (tempSelected === "qris") {
+      mutate({
+        "inquiryId": inquiry.id,
+        "amount": inquiry.total_amount,
+        "currency": inquiry.currency,
+        "paymentSource": "qris",
+        "idempotencyKey": `PURCHASE:${idempotentKey}:qris`,
+        "paymentSourceData": {
+          "cardToken": crypto.randomUUID(), // TODO TOKENIZE CARD
+          "threeDSecure": true
+        }
+      })
     }
   };
 
