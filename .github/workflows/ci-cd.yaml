@@ -77,64 +77,55 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Frontend Coverage
+        run: |
+          cd demoshop
+          yarn install
+          yarn test --coverage
 
-# ---------- FRONTEND ----------
-      # - uses: actions/setup-node@v4
-      #   with:
-      #     node-version: 20
-      # - name: Frontend Coverage
-      #   run: |
-      #     cd demoshop
-      #     yarn install
-      #     yarn test --coverage
+      - name: Payment Coverage
+        run: |
+          cd payment-service
+          yarn install
+          yarn test --coverage
 
-# ---------- PAYMENT ----------
-      # - name: Payment Coverage
-      #   run: |
-      #     cd payment-service
-      #     yarn install
-      #     yarn test --coverage
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Ledger Coverage
+        run: |
+          cd ledger-service
+          pip install -r requirements.txt
+          pip install pytest pytest-cov flake8
+          flake8 . || true
+          pytest --cov=. --cov-report=xml
 
-# ---------- LEDGER ----------
-      # - uses: actions/setup-python@v5
-      #   with:
-      #     python-version: "3.11"
-      # - name: Ledger Coverage
-      #   run: |
-      #     cd ledger-service
-      #     pip install -r requirements.txt
-      #     pip install pytest pytest-cov flake8
-      #     flake8 . || true
-      #     pytest --cov=. --cov-report=xml
-
-# ---------- TICKET (.NET) ----------
-      # - uses: actions/setup-dotnet@v4
-      #   with:
-      #     dotnet-version: "8.0.x"
-      # - name: Ticket Coverage
-      #   run: |
-      #     cd ticket-service
-      #     dotnet test --collect:"XPlat Code Coverage"
-      # - name: SonarCloud Scan
-      #   uses: SonarSource/sonarcloud-github-action@v2
-      #   env:
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      #   with:
-      #     args: >
-      #       -Dsonar.projectKey=rizkyian78_e-ticket
-      #       -Dsonar.organization=rizkyian78
-      #       -Dsonar.sources=.
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Ticket Coverage
+        run: |
+          cd ticket-service
+          dotnet test --collect:"XPlat Code Coverage"
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=rizkyian78_e-ticket
+            -Dsonar.organization=rizkyian78
+            -Dsonar.sources=.
         
-
-# =========================
-# QUALITY GATE
-# =========================
-      # - name: SonarQube Quality Gate
-      #   uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
-      #   timeout-minutes: 5
-      #   continue-on-error: true
-      #   env:
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: SonarQube Quality Gate
+        uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
+        timeout-minutes: 5
+        continue-on-error: true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
 # =========================
 # DOCKER LOGIN
@@ -151,13 +142,13 @@ jobs:
           # =========================
 # BUILD & PUSH IMAGES
 # =========================
-      - name: Build & Push Frontend Image
+      - name: Build & Push Frontend Demoshop Image
         run: |
            docker build --no-cache --build-arg VITE_API_TICKET_SERVICE_URL=https://rizkyiann8nautomation.my.id/ \
             --build-arg VITE_API_PAYMENT_SERVICE_URL=https://rizkyiann8nautomation.my.id/ \
             --build-arg VITE_API_KEY=sk_live_9f8a7b6c5d4e3f2a1 \
-            -t $IMAGE_PREFIX-frontend:$IMAGE_TAG demoshop
-            docker push $IMAGE_PREFIX-frontend:$IMAGE_TAG
+            -t $IMAGE_PREFIX-demoshop:$IMAGE_TAG demoshop
+            docker push $IMAGE_PREFIX-demoshop:$IMAGE_TAG
       - name: Build & Push Frontend Checkout Image
         run: |
           docker build --no-cache \

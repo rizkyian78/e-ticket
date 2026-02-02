@@ -19,8 +19,16 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
-          envFrom:
-            - configMapRef:
-                name: app-config
-            - secretRef:
-                name: app-secrets
+          env:
+            - name: RABBITMQ_HOST
+              value: rabbitmq.e-ticket.svc.cluster.local
+            - name: RABBITMQ_USER
+              value: guest
+            - name: RABBITMQ_PASS
+              value: guest
+            - name: DATABASE_URL
+              value: postgresql://postgres:password@postgres.e-ticket.svc.cluster.local:5432/ipg
+            - name: LEDGER_SERVICE_URL
+              value: http://ledger-service.e-ticket.svc.cluster.local:3000
+            - name: CHECKOUT_BASE_URL
+              value: "https://rizkyiann8nautomation.my.id/"

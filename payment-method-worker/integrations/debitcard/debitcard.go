@@ -28,6 +28,7 @@ func PayDebitCard() (DebitCardResponse, error) {
 	if err := json.Unmarshal(b, &simResp); err != nil {
 		return DebitCardResponse{}, err
 	}
+	time.Sleep(5 * time.Second)
 
 	return simResp, nil
 }

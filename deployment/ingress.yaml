@@ -3,11 +3,72 @@ kind: Ingress
 metadata:
   name: e-ticket-ingress
   namespace: e-ticket
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-cloudflare
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - rizkyiann8nautomation.my.id
+      secretName: e-ticket-tls
   rules:
-    - host: demoshop.example.com
+    - host: rizkyiann8nautomation.my.id
       http:
         paths:
+          # =========================
+          # CHECKOUT APP (assets FIRST)
+          # =========================
+
+          # =========================
+          # BACKOFFICE
+          # =========================
+          - path: /backoffice
+            pathType: Prefix
+            backend:
+              service:
+                name: backoffice-app
+                port:
+                  number: 80
+
+          # =========================
+          # APIs
+          # =========================
+          - path: /api/inquiry
+            pathType: Prefix
+            backend:
+              service:
+                name: payment-service
+                port:
+                  number: 3000
+
+          - path: /api/payment
+            pathType: Prefix
+            backend:
+              service:
+                name: payment-service
+                port:
+                  number: 3000
+
+          - path: /api/ticket
+            pathType: Prefix
+            backend:
+              service:
+                name: ticket-service
+                port:
+                  number: 8080
+
+          - path: /api/ledger
+            pathType: Prefix
+            backend:
+              service:
+                name: ledger-service
+                port:
+                  number: 8000
+
+          # =========================
+          # DEMOSHOP (ROOT LAST)
+          # =========================
           - path: /
             pathType: Prefix
             backend:
@@ -16,49 +77,3 @@ spec:
                 port:
                   number: 80
 
-    - host: checkout.example.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: checkout-app
-                port:
-                  number: 80
-
-    - host: backoffice.example.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: backoffice-app
-                port:
-                  number: 80
-
-    - host: api.example.com
-      http:
-        paths:
-          - path: /payment
-            pathType: Prefix
-            backend:
-              service:
-                name: payment-service
-                port:
-                  number: 80
-          - path: /ledger
-            pathType: Prefix
-            backend:
-              service:
-                name: ledger-service
-                port:
-                  number: 80
-          - path: /ticket
-            pathType: Prefix
-            backend:
-              service:
-                name: ticket-service
-                port:
-                  number: 80

@@ -29,5 +29,7 @@ func PayCreditCard() (CreditCardResponse, error) {
 		return CreditCardResponse{}, err
 	}
 
+	time.Sleep(5 * time.Second)
+
 	return simResp, nil
 }

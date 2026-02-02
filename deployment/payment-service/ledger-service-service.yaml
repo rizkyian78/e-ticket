@@ -7,5 +7,5 @@ spec:
   selector:
     app: ledger-service
   ports:
-    - port: 80
+    - port: 8000
       targetPort: 8000

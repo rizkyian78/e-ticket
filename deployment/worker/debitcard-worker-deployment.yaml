@@ -4,7 +4,7 @@ metadata:
   name: debitcard-worker
   namespace: e-ticket
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: debitcard-worker
@@ -16,10 +16,8 @@ spec:
       containers:
         - name: debitcard-worker
           image: rizkyian78/e-ticketing-debitcard-worker:9f84bcf
-          imagePullPolicy: IfNotPresent
-          envFrom:
-            - secretRef:
-                name: app-secrets
           env:
-            - name: WORKER_TYPE
-              value: "debitcard"
+           - name: AMQP_URL
+             value: amqp://guest:guest@rabbitmq.e-ticket.svc.cluster.local:5672/
+           - name: DATABASE_URL
+             value: postgresql://postgres:password@postgres.e-ticket.svc.cluster.local:5432/ipg?sslmode=disable

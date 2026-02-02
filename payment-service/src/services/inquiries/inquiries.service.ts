@@ -147,7 +147,7 @@ export class InquiriesService {
       status: inquiry.status,
       amount: inquiry.total_amount,
       currency: inquiry.currency,
-      paymentSources: ['banktransfer', 'qris', 'creditcard', 'debitcard'],
+      paymentSources: ['qris', 'creditcard', 'debitcard'],
       urls: {
         selections: baseUrl + `checkout/${inquiry.id}`,
         checkout: baseUrl + `checkout/${inquiry.id}`,

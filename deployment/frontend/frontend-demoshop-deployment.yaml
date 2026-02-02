@@ -19,3 +19,11 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
+          env:
+            - name: VITE_API_TICKET_SERVICE_URL
+              value: "https://rizkyiann8nautomation.my.id/api/tickets"
+            - name: VITE_API_PAYMENT_SERVICE_URL
+              value: "https://rizkyiann8nautomation.my.id/api"
+            - name: VITE_API_KEY
+              value: "sk_live_9f8a7b6c5d4e3f2a1"
+

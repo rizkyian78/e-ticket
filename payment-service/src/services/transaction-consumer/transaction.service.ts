@@ -44,7 +44,7 @@ export class TransactionConsumerService implements OnModuleInit {
         await inquiry
           .update({
             status: data.status,
-            // locked_amount: inquiry.total_amount,
+            locked_amount: inquiry.total_amount,
           })
           .catch((e) => console.log(e));
         const transaction = await this.transactionRepo.findById(

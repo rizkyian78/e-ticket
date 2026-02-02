@@ -1,3 +1,13 @@
+## Access URL
+
+The application is exposed via HTTPS tunnel for evaluation:
+
+https://rizkyiann8nautomation.my.id/ [Currently Using My domain. since other domain still propagate]
+
+Note:
+Custom domain + Cloudflare + cert-manager (DNS-01) is configured,
+but registrar DNS propagation exceeded assignment time constraints.
+
 ## Architecture Diagram
 
 ```
@@ -13,47 +23,47 @@
 │                      TICKET SERVICE                             │
 │                         (C# .NET)                               │
 │                                                                 │
-│  • Ticket availability validation                              │
-│  • Order creation & management                                 │
-│  • Initiates payment processing                                │
+│  • Ticket availability validation                               │
+│  • Order creation & management                                  │
+│  • Initiates payment processing                                 │
 └───────────┬─────────────────────────────────────────────────────┘
-            │ REST
+            │ will redirect to checkout then 
             ▼
 ┌───────────────────────────────────────────────────────────────┐
 │                   PAYMENT SERVICE                             │
-│                   (Node.js / Golang)                          │
+│                   (Node.js (NestJS))                          │
 │                                                               │
-│  • Payment method routing                                    │
-│  • Enqueues payment job to worker                            │
-│  • Returns job ID immediately (async)                        │
+│  • Payment method routing                                     │
+│  • Enqueues payment job to worker                             │
+│  • Returns job ID immediately (async)                         │
 └───────────┬───────────────────────────────────────────────────┘
             │ Enqueue Job
             ▼
 ┌───────────────────────────────────────────────────────────────┐
-│                   PAYMENT WORKER                              │
-│                   (Background Job Queue)                      │
+│                   PAYMENT WORKER (Golang)                     │
+│                   (Background Job Queue )                     │
 │                                                               │
-│  • Processes payment asynchronously                          │
-│  • Calls external payment gateway                            │
-│  • Handles retries & failures                                │
-│  • Updates payment status                                    │
+│  • Processes payment asynchronously                           │
+│  • Calls external payment gateway                             │
+│  • Handles retries & failures                                 │
+│  • Updates payment status                                     │
 └───────────┬──────────────────────┬────────────────────────────┘
             │                      │
             │ Call Gateway         │ Listen for webhooks
-            ▼                      ▼
-┌───────────────────────┐   ┌──────────────────────────────────┐
-│  External Payment     │   │   WEBHOOK ENDPOINT               │
-│  Gateway              │──▶│   (Payment Service)              │
-│                       │   │                                  │
-│  • Process payment    │   │  • Receive payment confirmation  │
-│  • Send webhook       │   │  • Verify signature              │
-└───────────────────────┘   │  • Trigger ledger recording      │
-                             └──────────┬───────────────────────┘
+            ▼ response             ▼
+┌───────────────────────┐   ┌───────────────────────────────────┐
+│  External Payment     │   │   WEBHOOK ENDPOINT                │
+│  Gateway              │   │   (Payment Service)               │
+│                       │   │                                   │
+│  • Process payment    │   │  • Receive payment confirmation   │
+│  • Send webhook       │   │  • Verify signature               │
+└───────────────────────┘   │  • Trigger ledger recording       │
+                            └──────────┬────────────────────────┘
                                         │ REST
                                         ▼
                              ┌──────────────────────────────────┐
                              │   LEDGER SERVICE                 │
-                             │   (Python)                       │
+                             │   (Python Fast API)              │
                              │                                  │
                              │  • Double-entry accounting       │
                              │  • Transaction recording         │
@@ -72,6 +82,11 @@
                              └──────────────────────────────────┘
 ```
 
+## Database Diagram
+
+![Database Diagram](pg_diagram.png)
+
+
 ## Service Responsibilities
 
 ### Ticket Service (C# .NET)
@@ -85,9 +100,9 @@
 
 **API Endpoints**
 
-- `GET /api/tickets` - List available ticket types with current quotas
-- `POST /api/orders/checkout` - Create order and process payment
-- `GET /api/orders/{id}` - Retrieve order details
+- `GET /api/ticket` - List available ticket types with current quotas
+- `POST /api/inquiry/submit` - Create order and process payment
+- `GET /api/inquiry/{id}` - Retrieve order details
 
 **Key Logic**
 
@@ -132,7 +147,7 @@ PaymentInterface
 
 ---
 
-### Ledger Service (Python)
+### Ledger Service (Python FAST API)
 
 **Primary Responsibilities**
 
@@ -182,24 +197,10 @@ Create `.env` file in project root:
 
 ```bash
 # Database
-DATABASE_URL=postgresql://postgres:password@localhost:5432/ticketing
-
-# Services
-TICKET_SERVICE_PORT=5001
-PAYMENT_SERVICE_PORT=5002
-LEDGER_SERVICE_PORT=5003
-FRONTEND_PORT=3000
-
-# Security
-API_KEY=your-secret-api-key-here
-CLIENT_ID=client-12345
-CLIENT_SECRET=secret-67890
-
-# Payment Gateway (for simulation)
-PAYMENT_TIMEOUT_MS=8000
+you'll find environment variables examples in each service
 ```
 
-### Step 3: Start Services with Docker Compose
+### Step 3: Start PG and RabbitMQ with Docker Compose
 
 ```bash
 docker-compose up -d
@@ -208,29 +209,13 @@ docker-compose up -d
 This will start:
 
 - PostgreSQL database (port 5432)
-- Ticket Service (port 5001)
-- Payment Service (port 5002)
-- Ledger Service (port 5003)
-- React Frontend (port 3000)
+- RabbitMQ (port 5672w)
 
 ### Step 4: Database Migration
 
 ```bash
 # Run migrations
-docker-compose exec ticket-service dotnet ef database update
-
-# Or use migration scripts
-docker-compose exec db psql -U postgres -d ticketing -f /migrations/init.sql
-```
-
-### Step 5: Verify Services
-
-**Health Check**
-
-```bash
-curl http://localhost:5001/health  # Ticket Service
-curl http://localhost:5002/health  # Payment Service
-curl http://localhost:5003/health  # Ledger Service
+folder called init_mgrations you can copy that and backup in the postgres
 ```
 
 
@@ -242,7 +227,7 @@ curl http://localhost:5003/health  # Ledger Service
 
 - AWS EC2 t2.micro or t3.micro (free tier eligible)
 - K3s (lightweight Kubernetes)
-- Traefik ingress controller
+- Nginx ingress controller
 - Let's Encrypt for TLS certificates
 
 ### Prerequisites

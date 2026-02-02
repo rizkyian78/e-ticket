@@ -15,12 +15,16 @@ spec:
     spec:
       containers:
         - name: ticket-service
-          image: rizkyian78/e-ticketing-ticket:9f84bcf
+          image: rizkyian78/e-ticketing-ticket:6048c18
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
+          env:
+            - name: ConnectionStrings__DefaultConnection
+              value: "Host=postgres;Port=5432;Database=ipg;Username=postgres;Password=password"
           envFrom:
             - configMapRef:
                 name: app-config
             - secretRef:
                 name: app-secrets
+

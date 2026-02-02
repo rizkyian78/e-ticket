@@ -15,12 +15,22 @@ spec:
     spec:
       containers:
         - name: ledger-service
-          image: rizkyian78/e-ticketing-ledger:9f84bcf
+          image: rizkyian78/e-ticketing-ledger:6048c18
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
+          env:
+            - name: DB_HOST
+              value: postgres
+            - name: DB_NAME
+              value: ipg
+            - name: DB_USER
+              value: postgres
+            - name: DB_PASSWORD
+              value: password
           envFrom:
             - configMapRef:
                 name: app-config
             - secretRef:
                 name: app-secrets
+
