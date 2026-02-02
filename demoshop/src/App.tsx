@@ -9,8 +9,6 @@ import axios from 'axios';
 
 export default function App() {
 
-
-
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [quantities, setQuantities] = useState<Record<string, number>>({
     gold: 0,

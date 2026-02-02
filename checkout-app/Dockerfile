@@ -9,8 +9,14 @@ COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
 
 COPY . .
-RUN yarn build
 
+# 👇 build-time variable
+ARG VITE_API_BASE_URL
+
+# 👇 expose to Vite
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
+RUN yarn build
 
 # =========================
 # Runtime stage
@@ -19,7 +25,6 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# lightweight static server
 RUN yarn global add serve
 
 COPY --from=builder /app/dist ./dist
