@@ -10,6 +10,7 @@ export class CreditCardLedgerStrategy implements LedgerStrategy {
     amount: string;
     currency: string;
     customerId: string;
+    payment_source;
   }) {
     return {
       idempotency_key: input.transactionId,
@@ -29,7 +30,7 @@ export class CreditCardLedgerStrategy implements LedgerStrategy {
         },
       ],
       metadata: {
-        payment_source: 'creditcard',
+        payment_source: input.payment_source,
       },
     };
   }

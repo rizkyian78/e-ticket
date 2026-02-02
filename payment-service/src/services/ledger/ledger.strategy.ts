@@ -5,5 +5,6 @@ export interface LedgerStrategy {
     transactionId: string;
     amount: string;
     currency: string;
+    payment_source: string;
   }): any;
 }

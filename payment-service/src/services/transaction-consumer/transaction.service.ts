@@ -71,6 +71,7 @@ export class TransactionConsumerService implements OnModuleInit {
       transactionId: transaction.id,
       amount: transaction.amount,
       currency: transaction.currency,
+      payment_source: transaction.payment_method,
     });
     await this.ledgerClient.postLedger(payload);
   }

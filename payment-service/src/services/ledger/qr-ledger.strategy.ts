@@ -11,6 +11,7 @@ export class QrLedgerStrategy implements LedgerStrategy {
     amount: string;
     currency: string;
     customerId: string;
+    payment_source: string;
   }) {
     return {
       idempotency_key: input.transactionId,
@@ -30,7 +31,7 @@ export class QrLedgerStrategy implements LedgerStrategy {
         },
       ],
       metadata: {
-        payment_source: 'qr',
+        payment_source: input.payment_source,
       },
     };
   }
