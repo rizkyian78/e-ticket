@@ -25,10 +25,11 @@ function App() {
   const { data, isLoading } = useQuery({
     queryKey: ["inquiry", inquiryId],
     queryFn: () => fetchInquiry(inquiryId!),
+    enabled: !!inquiryId,
+
   });
 
 
-  console.log(JSON.stringify(data), "<<<<")
 
   if (isLoading) return <>LOADINGG</>
 
