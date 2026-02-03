@@ -16,7 +16,7 @@ spec:
       containers:
         - name: ticket-service
           image: rizkyian78/e-ticketing-ticket:6048c18
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
