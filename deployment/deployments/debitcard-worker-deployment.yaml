@@ -15,7 +15,7 @@ spec:
     spec:  # remove if image is public
       containers:
         - name: debitcard-worker
-          image: rizkyian78/e-ticketing-debitcard-worker:9f84bcf
+          image: docker.io/rizkyian78/e-ticketing-debitcard-worker:d927624
           imagePullPolicy: Always
           env:
            - name: AMQP_URL
