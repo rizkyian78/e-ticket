@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: ticket-service
-          image: docker.io/rizkyian78/e-ticketing-ticket:484acc8
+          image: docker.io/rizkyian78/e-ticketing-ticket:f6e1e2d
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
