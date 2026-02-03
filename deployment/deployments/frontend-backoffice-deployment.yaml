@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: backoffice-app
-          image: docker.io/rizkyian78/e-ticketing-backoffice-app:d927624
+          image: docker.io/rizkyian78/e-ticketing-backoffice-app:ce53631
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
