@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: ledger-service
-          image: docker.io/rizkyian78/e-ticketing-ledger:ce53631
+          image: docker.io/rizkyian78/e-ticketing-ledger:e67f0c6
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
