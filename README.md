@@ -723,6 +723,73 @@ Example: docker.io/rizkyian78/e-ticketing-demoshop:a3f7b2c
 
 ---
 
+## Argo CD (GitOps Deployment)
+
+This project uses **Argo CD** to implement a **GitOps-based Continuous Deployment** model.
+
+Argo CD continuously reconciles the Kubernetes cluster state with **declarative manifests stored in Git**.  
+**Git is the single source of truth** for all deployments.
+
+---
+
+### Why Argo CD
+
+- Prevents configuration drift caused by manual `kubectl` changes
+- Enforces reproducible deployments across environments
+- Automatically deploys new images after CI updates manifests
+- Enables self-healing and safe pruning of obsolete resources
+
+---
+
+### GitOps Flow (This Project)
+
+```text
+Developer
+  │
+  │  git push
+  ▼
+GitHub Actions (CI)
+  │
+  │  • Run tests
+  │  • Build Docker images
+  │  • Push images to Docker Hub
+  │  • Update Kubernetes manifests (image tags)
+  │
+  ▼
+Git Repository (main branch)
+  │
+  ▼
+Argo CD
+  │
+  │  • Detects Git changes
+  │  • Syncs manifests
+  │  • Applies to Kubernetes
+  ▼
+Kubernetes Cluster (K3s)
+```
+
+### Argo CD Responsibilities
+
+Argo CD **does not build Docker images**.
+
+It only:
+
+- Watches the Git repository
+- Applies Kubernetes YAML manifests
+- Ensures the cluster state matches Git
+
+---
+
+### Responsibility Matrix
+-----------------------------------------
+| Responsibility        | Tool           |
+|----------------------|----------------|
+| Build Docker images  | GitHub Actions |
+| Push Docker images   | GitHub Actions |
+| Update manifests     | GitHub Actions |
+| Apply manifests      | Argo CD        |
+-----------------------------------------
+
 ## Key Pipeline Features
 
 **Quality Gates**
