@@ -16,7 +16,7 @@ spec:
       containers:
         - name: payment-service
           image: rizkyian78/e-ticketing-payment:9f84bcf
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
           env:

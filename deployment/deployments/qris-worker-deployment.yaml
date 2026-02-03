@@ -16,7 +16,7 @@ spec:
       containers:
         - name: qris-worker
           image: rizkyian78/e-ticketing-qris-worker:9f84bcf
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           envFrom:
             - secretRef:
                 name: app-secrets

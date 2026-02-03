@@ -16,7 +16,7 @@ spec:
       containers:
         - name: ledger-service
           image: rizkyian78/e-ticketing-ledger:6048c18
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
           env:

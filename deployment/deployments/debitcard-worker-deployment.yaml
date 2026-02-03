@@ -16,6 +16,7 @@ spec:
       containers:
         - name: debitcard-worker
           image: rizkyian78/e-ticketing-debitcard-worker:9f84bcf
+          imagePullPolicy: Always
           env:
            - name: AMQP_URL
              value: amqp://guest:guest@rabbitmq.e-ticket.svc.cluster.local:5672/
