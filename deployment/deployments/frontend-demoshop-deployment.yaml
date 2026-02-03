@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: demoshop
-          image: rizkyian78/e-ticketing-frontend:9f84bcf
+          image: rizkyian78/e-ticketing-demoshop:9f84bcf
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
