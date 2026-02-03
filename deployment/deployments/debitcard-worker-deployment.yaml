@@ -21,4 +21,4 @@ spec:
            - name: AMQP_URL
              value: amqp://guest:guest@rabbitmq.e-ticket.svc.cluster.local:5672/
            - name: DATABASE_URL
-             value: postgresql://postgres:password@postgres.e-ticket.svc.cluster.local:5432/ipg?sslmode=disable
+             value: postgresql://postgres:password@postgres.e-ticket.svc.cluster.local:5432/worker?sslmode=disable
