@@ -251,7 +251,7 @@ jobs:
             git fetch origin main
             git rebase origin/main
 
-            git add deployment/deployments
+            git add .
             git commit -m "chore(deploy): update images to ${IMAGE_TAG}" || echo "No changes to commit"
-
+            git pull --rebase origin main
             git push origin main
