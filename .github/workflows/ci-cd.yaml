@@ -248,7 +248,10 @@ jobs:
             git config user.name "Rizky Ian Indiarto"
             git config user.email "rizkyian78@gmail.com"
   
+            git fetch origin main
+            git rebase origin/main
+
             git add deployment/deployments
-  
             git commit -m "chore(deploy): update images to ${IMAGE_TAG}" || echo "No changes to commit"
+
             git push origin main
