@@ -31,4 +31,4 @@ spec:
             - name: LEDGER_SERVICE_URL
               value: http://ledger-service.e-ticket.svc.cluster.local:3000
             - name: CHECKOUT_BASE_URL
-              value: "https://rizkyiann8nautomation.my.id/"
+              value: "https://checkoutpage.site/"
