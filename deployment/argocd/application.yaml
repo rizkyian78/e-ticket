@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: e-ticket
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/rizkyian78/e-ticket.git 
+    targetRevision: main
+    path: deployment/deployments
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: e-ticket
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

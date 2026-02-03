@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+---
+# Official Argo CD install manifest
+# Pinned to stable
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: argocd-install-placeholder
+      namespace: argocd

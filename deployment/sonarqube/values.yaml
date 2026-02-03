@@ -1,0 +1,30 @@
+edition: community
+
+image:
+  tag: lts
+
+postgresql:
+  enabled: false
+
+jdbcOverwrite:
+  enable: true
+  jdbcUrl: jdbc:postgresql://sonarqube-postgres.sonarqube.svc.cluster.local:5432/sonarqube
+  jdbcUsername: sonar
+  jdbcPassword: sonarpass
+
+persistence:
+  enabled: true
+  size: 20Gi
+
+resources:
+  requests:
+    cpu: "500m"
+    memory: "2Gi"
+  limits:
+    cpu: "1"
+    memory: "4Gi"
+
+sonarProperties:
+  sonar.web.context: /
+  sonar.forceAuthentication: true
+
