@@ -10,26 +10,25 @@ RUN yarn install --frozen-lockfile
 
 COPY . .
 
-# 👇 build-time variable
 ARG VITE_API_BASE_URL
-
-# 👇 expose to Vite
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 RUN yarn build
 
 # =========================
-# Runtime stage
+# Runtime stage (NGINX)
 # =========================
-FROM node:20-alpine
+FROM nginx:alpine
 
-WORKDIR /app
+# Remove default config
+RUN rm /etc/nginx/conf.d/default.conf
 
-RUN yarn global add serve
+# Copy custom NGINX config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-COPY --from=builder /app/dist ./dist
+# Copy build output
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-ENV PORT=3000
-EXPOSE 3000
+EXPOSE 80
 
-CMD ["serve", "-s", "dist", "-l", "3000", "--single"]
+CMD ["nginx", "-g", "daemon off;"]

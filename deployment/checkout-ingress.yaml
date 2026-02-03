@@ -23,4 +23,3 @@ spec:
                 name: checkout-app
                 port:
                   number: 80
-
