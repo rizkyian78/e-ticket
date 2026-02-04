@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: payment-service
-          image: docker.io/rizkyian78/e-ticketing-payment:f6e1e2d
+          image: docker.io/rizkyian78/e-ticketing-payment:2fba526
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
