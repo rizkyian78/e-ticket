@@ -11,7 +11,6 @@ permissions:
 env:
   SONAR_PROJECT_KEY: rizkyian78_e-ticket
   IMAGE_PREFIX: docker.io/rizkyian78/e-ticketing
-  IMAGE_TAG: ${GITHUB_SHA::7}" >> $GITHUB_ENV
 
 jobs:
 
@@ -22,7 +21,6 @@ jobs:
     if: github.event_name == 'pull_request'
     name: PR - Full Test Suite
     runs-on: ubuntu-latest
-    environment: e-ticket
 
     steps:
       - uses: actions/checkout@v4
@@ -71,7 +69,6 @@ jobs:
     if: github.event_name == 'push'
     name: Merge - Test + Coverage + Sonar
     runs-on: ubuntu-latest
-    environment: e-ticket
 
     steps:
       - uses: actions/checkout@v4
@@ -142,7 +139,6 @@ jobs:
     name: Docker Build & Push (${{ matrix.name }})
     needs: merge-tests-coverage-sonar
     runs-on: ubuntu-latest
-    environment: e-ticket
 
     strategy:
       fail-fast: false
@@ -199,7 +195,7 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: rizkyian78
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set image tag
@@ -224,8 +220,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Set image tag
+        run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
       - name: Update Kubernetes image tags
         run: |
+          # Frontends
           sed -i "s|image: .*e-ticketing-demoshop:.*|image: $IMAGE_PREFIX-demoshop:$IMAGE_TAG|g" deployment/deployments/frontend-demoshop-deployment.yaml
           sed -i "s|image: .*e-ticketing-checkout-app:.*|image: $IMAGE_PREFIX-checkout-app:$IMAGE_TAG|g" deployment/deployments/frontend-checkout-deployment.yaml
           sed -i "s|image: .*e-ticketing-backoffice-app:.*|image: $IMAGE_PREFIX-backoffice-app:$IMAGE_TAG|g" deployment/deployments/frontend-backoffice-deployment.yaml
@@ -245,7 +247,7 @@ jobs:
           git config user.name "Rizky Ian Indiarto"
           git config user.email "rizkyian78@gmail.com"
 
-          git add deployment/deployments
-          git commit -m "chore(deploy): update images to ${IMAGE_TAG}" || echo "No changes to commit"
+          git add .
+          git commit -m "chore(deploy): Successfully updated images in deployment/deployments ${IMAGE_TAG}" || echo "No changes"
           git pull --rebase origin main
           git push origin main
