@@ -15,7 +15,7 @@ spec:
     spec:  # remove if image is public
       containers:
         - name: qris-worker
-          image: docker.io//e-ticketing-qris-worker:e4b9a3a
+          image: docker.io/rizkyian78/e-ticketing-qris-worker:fe224a0
           imagePullPolicy: Always
           envFrom:
             - secretRef:

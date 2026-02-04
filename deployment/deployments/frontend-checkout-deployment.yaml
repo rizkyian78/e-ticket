@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: checkout-app
-          image: docker.io//e-ticketing-checkout-app:e4b9a3a
+          image: docker.io/rizkyian78/e-ticketing-checkout-app:fe224a0
           imagePullPolicy: Always
           ports:
             - containerPort: 3000

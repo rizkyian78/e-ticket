@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: demoshop
-          image: docker.io//e-ticketing-demoshop:e4b9a3a
+          image: docker.io/rizkyian78/e-ticketing-demoshop:fe224a0
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
