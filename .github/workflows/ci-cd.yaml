@@ -15,7 +15,7 @@ env:
 jobs:
 
 # =========================
-# PR PIPELINE (UNCHANGED)
+# PR PIPELINE
 # =========================
   pr-tests:
     if: github.event_name == 'pull_request'
@@ -64,7 +64,7 @@ jobs:
           dotnet test
 
 # =========================
-# MERGE PIPELINE (TEST + SONAR ONLY)
+# MERGE PIPELINE (TEST + SONAR)
 # =========================
   merge-tests-coverage-sonar:
     if: github.event_name == 'push'
@@ -134,7 +134,7 @@ jobs:
             -Dsonar.sources=.
 
 # =========================
-# PARALLEL DOCKER BUILD (PUSH ONLY)
+# PARALLEL DOCKER BUILD & PUSH
 # =========================
   docker-build-push:
     if: github.event_name == 'push'
@@ -150,50 +150,47 @@ jobs:
           - name: demoshop
             context: demoshop
             image: demoshop
-            build_args: |
-              --build-arg VITE_API_TICKET_SERVICE_URL=https://rizkyiann8nautomation.my.id/
-              --build-arg VITE_API_PAYMENT_SERVICE_URL=https://rizkyiann8nautomation.my.id/
-              --build-arg VITE_API_KEY=sk_live_9f8a7b6c5d4e3f2a1
+            build_args: "--build-arg VITE_API_TICKET_SERVICE_URL=https://rizkyiann8nautomation.my.id/ --build-arg VITE_API_PAYMENT_SERVICE_URL=https://rizkyiann8nautomation.my.id/ --build-arg VITE_API_KEY=sk_live_9f8a7b6c5d4e3f2a1"
 
           - name: checkout-app
             context: checkout-app
             image: checkout-app
-            build_args: |
-              --build-arg VITE_API_BASE_URL=https://rizkyiann8nautomation.my.id/
+            build_args: "--build-arg VITE_API_BASE_URL=https://rizkyiann8nautomation.my.id/"
 
           - name: backoffice-app
             context: backoffice-app
             image: backoffice-app
+            build_args: ""
 
           - name: payment
             context: payment-service
             image: payment
+            build_args: ""
 
           - name: ledger
             context: ledger-service
             image: ledger
+            build_args: ""
 
           - name: ticket
             context: ticket-service
             image: ticket
+            build_args: ""
 
           - name: creditcard-worker
             context: payment-method-worker
             image: creditcard-worker
-            build_args: |
-              --build-arg CMD_NAME=creditcard
+            build_args: "--build-arg CMD_NAME=creditcard"
 
           - name: qris-worker
             context: payment-method-worker
             image: qris-worker
-            build_args: |
-              --build-arg CMD_NAME=qris
+            build_args: "--build-arg CMD_NAME=qris"
 
           - name: debitcard-worker
             context: payment-method-worker
             image: debitcard-worker
-            build_args: |
-              --build-arg CMD_NAME=debitcard
+            build_args: "--build-arg CMD_NAME=debitcard"
 
     steps:
       - uses: actions/checkout@v4
@@ -217,7 +214,7 @@ jobs:
           docker push $IMAGE_PREFIX-${{ matrix.image }}:$IMAGE_TAG
 
 # =========================
-# GITOPS UPDATE (UNCHANGED)
+# UPDATE K8S MANIFESTS (ARGO CD)
 # =========================
   update-k8s-manifests:
     if: github.event_name == 'push'
@@ -231,14 +228,19 @@ jobs:
       - name: Set image tag
         run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-      - name: Update image tags
+      - name: Update Kubernetes image tags
         run: |
+          # Frontends
           sed -i "s|image: .*e-ticketing-demoshop:.*|image: $IMAGE_PREFIX-demoshop:$IMAGE_TAG|g" deployment/deployments/frontend-demoshop-deployment.yaml
           sed -i "s|image: .*e-ticketing-checkout-app:.*|image: $IMAGE_PREFIX-checkout-app:$IMAGE_TAG|g" deployment/deployments/frontend-checkout-deployment.yaml
           sed -i "s|image: .*e-ticketing-backoffice-app:.*|image: $IMAGE_PREFIX-backoffice-app:$IMAGE_TAG|g" deployment/deployments/frontend-backoffice-deployment.yaml
+
+          # Core services
           sed -i "s|image: .*e-ticketing-payment:.*|image: $IMAGE_PREFIX-payment:$IMAGE_TAG|g" deployment/deployments/payment-service-deployment.yaml
           sed -i "s|image: .*e-ticketing-ledger:.*|image: $IMAGE_PREFIX-ledger:$IMAGE_TAG|g" deployment/deployments/ledger-service-deployment.yaml
           sed -i "s|image: .*e-ticketing-ticket:.*|image: $IMAGE_PREFIX-ticket:$IMAGE_TAG|g" deployment/deployments/ticket-service-deployment.yaml
+
+          # Workers
           sed -i "s|image: .*e-ticketing-creditcard-worker:.*|image: $IMAGE_PREFIX-creditcard-worker:$IMAGE_TAG|g" deployment/deployments/creditcard-worker-deployment.yaml
           sed -i "s|image: .*e-ticketing-qris-worker:.*|image: $IMAGE_PREFIX-qris-worker:$IMAGE_TAG|g" deployment/deployments/qris-worker-deployment.yaml
           sed -i "s|image: .*e-ticketing-debitcard-worker:.*|image: $IMAGE_PREFIX-debitcard-worker:$IMAGE_TAG|g" deployment/deployments/debitcard-worker-deployment.yaml
@@ -247,7 +249,8 @@ jobs:
         run: |
           git config user.name "Rizky Ian Indiarto"
           git config user.email "rizkyian78@gmail.com"
+
           git add deployment/deployments
-          git commit -m "chore(deploy): update images to ${IMAGE_TAG}" || echo "No changes"
+          git commit -m "chore(deploy): update images to ${IMAGE_TAG}" || echo "No changes to commit"
           git pull --rebase origin main
           git push origin main
