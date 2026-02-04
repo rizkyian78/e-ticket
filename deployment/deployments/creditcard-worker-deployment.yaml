@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: creditcard-worker
-          image: docker.io/rizkyian78/e-ticketing-creditcard-worker:28247a4
+          image: docker.io//e-ticketing-creditcard-worker:e4b9a3a
           imagePullPolicy: Always
           env:
            - name: AMQP_URL
