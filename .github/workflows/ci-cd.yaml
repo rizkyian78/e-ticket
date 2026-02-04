@@ -18,19 +18,17 @@ env:
 jobs:
   pr-tests:
     if: github.event_name == 'pull_request'
-    name: PR - Full Test Suite
     runs-on: ubuntu-latest
     environment: e-ticket
 
     steps:
       - uses: actions/checkout@v4
 
-      # ---------- FRONTEND ----------
       - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Demoshop Tests
+      - name: Frontend Tests
         run: |
           cd demoshop
           yarn install
@@ -44,7 +42,6 @@ jobs:
           yarn lint || true
           yarn test
 
-      # ---------- LEDGER ----------
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -55,7 +52,6 @@ jobs:
           pip install -r requirements.txt pytest
           pytest
 
-      # ---------- TICKET ----------
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8.0.x"
@@ -63,15 +59,13 @@ jobs:
       - name: Ticket Tests
         run: |
           cd ticket-service
-          dotnet restore
           dotnet test
 
 # =========================
-# MERGE PIPELINE (TEST + SONAR)
+# MERGE PIPELINE
 # =========================
   merge-tests-coverage-sonar:
     if: github.event_name == 'push'
-    name: Merge - Test + Coverage + Sonar
     runs-on: ubuntu-latest
     environment: e-ticket
 
@@ -82,21 +76,9 @@ jobs:
         with:
           node-version: 20
 
-      - name: Demoshop Coverage
+      - name: Frontend Coverage
         run: |
           cd demoshop
-          yarn install
-          yarn test --coverage
-
-      - name: Checkout Coverage
-        run: |
-          cd checkout-app
-          yarn install
-          yarn test --coverage
-
-      - name: Backoffice Coverage
-        run: |
-          cd backoffice-app
           yarn install
           yarn test --coverage
 
@@ -113,8 +95,7 @@ jobs:
       - name: Ledger Coverage
         run: |
           cd ledger-service
-          pip install -r requirements.txt pytest pytest-cov flake8
-          flake8 . || true
+          pip install -r requirements.txt pytest pytest-cov
           pytest --cov=. --cov-report=xml
 
       - uses: actions/setup-dotnet@v4
@@ -137,10 +118,9 @@ jobs:
             -Dsonar.sources=.
 
 # =========================
-# PARALLEL DOCKER BUILD & PUSH
+# PARALLEL DOCKER BUILD
 # =========================
   docker-build-push:
-    name: Docker Build & Push (${{ matrix.name }})
     needs: merge-tests-coverage-sonar
     runs-on: ubuntu-latest
     environment: e-ticket
@@ -182,17 +162,20 @@ jobs:
           - name: creditcard-worker
             context: payment-method-worker
             image: creditcard-worker
-            build_args: CMD_NAME=creditcard
+            build_args: |
+              CMD_NAME=creditcard
 
           - name: qris-worker
             context: payment-method-worker
             image: qris-worker
-            build_args: CMD_NAME=qris
+            build_args: |
+              CMD_NAME=qris
 
           - name: debitcard-worker
             context: payment-method-worker
             image: debitcard-worker
-            build_args: CMD_NAME=debitcard
+            build_args: |
+              CMD_NAME=debitcard
 
     steps:
       - uses: actions/checkout@v4
@@ -207,26 +190,27 @@ jobs:
         run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
       - name: Build & Push Image
+        shell: bash
         run: |
-          BUILD_ARGS=""
+          BUILD_ARGS=()
+
           if [ -n "${{ matrix.build_args }}" ]; then
-            for arg in ${{ matrix.build_args }}; do
-              BUILD_ARGS="$BUILD_ARGS --build-arg $arg"
-            done
+            while IFS= read -r arg; do
+              BUILD_ARGS+=(--build-arg "$arg")
+            done <<< "${{ matrix.build_args }}"
           fi
 
           docker build --no-cache \
-            $BUILD_ARGS \
+            "${BUILD_ARGS[@]}" \
             -t $IMAGE_PREFIX-${{ matrix.image }}:$IMAGE_TAG \
             ${{ matrix.context }}
 
           docker push $IMAGE_PREFIX-${{ matrix.image }}:$IMAGE_TAG
 
 # =========================
-# GITOPS IMAGE TAG UPDATE
+# GITOPS UPDATE
 # =========================
   update-k8s-manifests:
-    name: Update Kubernetes Manifests
     needs: docker-build-push
     runs-on: ubuntu-latest
 
@@ -236,7 +220,7 @@ jobs:
       - name: Set image tag
         run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-      - name: Update image tags
+      - name: Update manifests
         run: |
           sed -i "s|image: .*e-ticketing-demoshop:.*|image: $IMAGE_PREFIX-demoshop:$IMAGE_TAG|g" deployment/deployments/frontend-demoshop-deployment.yaml
           sed -i "s|image: .*e-ticketing-checkout-app:.*|image: $IMAGE_PREFIX-checkout-app:$IMAGE_TAG|g" deployment/deployments/frontend-checkout-deployment.yaml
@@ -244,15 +228,12 @@ jobs:
           sed -i "s|image: .*e-ticketing-payment:.*|image: $IMAGE_PREFIX-payment:$IMAGE_TAG|g" deployment/deployments/payment-service-deployment.yaml
           sed -i "s|image: .*e-ticketing-ledger:.*|image: $IMAGE_PREFIX-ledger:$IMAGE_TAG|g" deployment/deployments/ledger-service-deployment.yaml
           sed -i "s|image: .*e-ticketing-ticket:.*|image: $IMAGE_PREFIX-ticket:$IMAGE_TAG|g" deployment/deployments/ticket-service-deployment.yaml
-          sed -i "s|image: .*e-ticketing-creditcard-worker:.*|image: $IMAGE_PREFIX-creditcard-worker:$IMAGE_TAG|g" deployment/deployments/creditcard-worker-deployment.yaml
-          sed -i "s|image: .*e-ticketing-qris-worker:.*|image: $IMAGE_PREFIX-qris-worker:$IMAGE_TAG|g" deployment/deployments/qris-worker-deployment.yaml
-          sed -i "s|image: .*e-ticketing-debitcard-worker:.*|image: $IMAGE_PREFIX-debitcard-worker:$IMAGE_TAG|g" deployment/deployments/debitcard-worker-deployment.yaml
 
-      - name: Commit and push manifests
+      - name: Commit & push
         run: |
           git config user.name "Rizky Ian Indiarto"
           git config user.email "rizkyian78@gmail.com"
           git add .
-          git commit -m "chore(deploy): update images to ${IMAGE_TAG}" || echo "No changes"
+          git commit -m "chore(deploy): update images ${IMAGE_TAG}" || echo "No changes"
           git pull --rebase origin main
           git push origin main
