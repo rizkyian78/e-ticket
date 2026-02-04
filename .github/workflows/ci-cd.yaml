@@ -226,7 +226,6 @@ jobs:
     steps:
       - name: Update Kubernetes image tags
         run: |
-          # Frontends
           sed -i "s|image: .*e-ticketing-demoshop:.*|image: $IMAGE_PREFIX-demoshop:$IMAGE_TAG|g" deployment/deployments/frontend-demoshop-deployment.yaml
           sed -i "s|image: .*e-ticketing-checkout-app:.*|image: $IMAGE_PREFIX-checkout-app:$IMAGE_TAG|g" deployment/deployments/frontend-checkout-deployment.yaml
           sed -i "s|image: .*e-ticketing-backoffice-app:.*|image: $IMAGE_PREFIX-backoffice-app:$IMAGE_TAG|g" deployment/deployments/frontend-backoffice-deployment.yaml
