@@ -1,4 +1,4 @@
-name: CI Pipeline (Tests + Parallel Docker Build + GitOps)
+name: CI Pipeline (Tests + Coverage + SonarQube + Docker)
 
 on:
   pull_request:
@@ -9,198 +9,248 @@ permissions:
   contents: write
 
 env:
-  IMAGE_PREFIX: docker.io/rizkyian78/e-ticketing
+  SONAR_PROJECT_KEY: rizkyian78_e-ticket
+  IMAGE_PREFIX: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/e-ticketing
 
 jobs:
+
 # =========================
 # PR PIPELINE
 # =========================
   pr-tests:
     if: github.event_name == 'pull_request'
+    name: PR - Full Test Suite
     runs-on: ubuntu-latest
+    environment: e-ticket
 
     steps:
       - uses: actions/checkout@v4
 
+# ---------- FRONTEND ----------
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Demoshop Tests
+      - name: Frontend Tests
         run: |
           cd demoshop
           yarn install
+          yarn lint || true
           yarn test
 
+# ---------- PAYMENT ----------
       - name: Payment Tests
         run: |
           cd payment-service
           yarn install
+          yarn lint || true
           yarn test
 
+# ---------- LEDGER ----------
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
       - name: Ledger Tests
         run: |
           cd ledger-service
-          pip install -r requirements.txt pytest
+          pip install -r requirements.txt
+          pip install pytest
           pytest
 
+# ---------- TICKET (.NET) ----------
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8.0.x"
-
       - name: Ticket Tests
         run: |
           cd ticket-service
+          dotnet restore
           dotnet test
 
 # =========================
 # MERGE PIPELINE
 # =========================
-  merge-tests:
+  merge-tests-coverage-sonar:
     if: github.event_name == 'push'
+    name: Merge - Test + Coverage + Sonar + Docker Push
     runs-on: ubuntu-latest
+    environment: e-ticket
 
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-
       - name: Demoshop Coverage
         run: |
           cd demoshop
           yarn install
           yarn test --coverage
 
-# =========================
-# PARALLEL DOCKER BUILD & PUSH
-# =========================
-  docker-build-push:
-    needs: merge-tests
-    runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: demoshop
-            context: demoshop
-            image: demoshop
-            build_args: |
-              VITE_API_TICKET_SERVICE_URL=https://rizkyiann8nautomation.my.id/
-              VITE_API_PAYMENT_SERVICE_URL=https://rizkyiann8nautomation.my.id/
-              VITE_API_KEY=sk_live_9f8a7b6c5d4e3f2a1
-
-          - name: checkout-app
-            context: checkout-app
-            image: checkout-app
-            build_args: |
-              VITE_API_BASE_URL=https://rizkyiann8nautomation.my.id/
-
-          - name: backoffice-app
-            context: backoffice-app
-            image: backoffice-app
-
-          - name: payment
-            context: payment-service
-            image: payment
-
-          - name: ledger
-            context: ledger-service
-            image: ledger
-
-          - name: ticket
-            context: ticket-service
-            image: ticket
-
-          - name: creditcard-worker
-            context: payment-method-worker
-            image: creditcard-worker
-            build_args: |
-              CMD_NAME=creditcard
-
-          - name: qris-worker
-            context: payment-method-worker
-            image: qris-worker
-            build_args: |
-              CMD_NAME=qris
-
-          - name: debitcard-worker
-            context: payment-method-worker
-            image: debitcard-worker
-            build_args: |
-              CMD_NAME=debitcard
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Login to Docker Hub
+      - name: Checkout App Coverage
         run: |
-          docker login \
-            -u "rizkyian78" \
-            -p "${{ secrets.DOCKERHUB_TOKEN }}"
+          cd checkout-app
+          yarn install
+          yarn test --coverage
+
+      - name: Backoffice Coverage
+        run: |
+          cd backoffice-app
+          yarn install
+          yarn test --coverage
+
+      - name: Payment Coverage
+        run: |
+          cd payment-service
+          yarn install
+          yarn test --coverage
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Ledger Coverage
+        run: |
+          cd ledger-service
+          pip install -r requirements.txt
+          pip install pytest pytest-cov flake8
+          flake8 . || true
+          pytest --cov=. --cov-report=xml
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Ticket Coverage
+        run: |
+          cd ticket-service
+          dotnet test --collect:"XPlat Code Coverage"
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=rizkyian78_e-ticket
+            -Dsonar.organization=rizkyian78
+            -Dsonar.sources=.
+        
+      - name: SonarQube Quality Gate
+        uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
+        timeout-minutes: 5
+        continue-on-error: true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+# =========================
+# DOCKER LOGIN
+# =========================
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set image tag
         run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
-
-      - name: Build & Push Image
-        shell: bash
+          # =========================
+# BUILD & PUSH IMAGES
+# =========================
+      - name: Build & Push Frontend Demoshop Image
         run: |
-          BUILD_ARGS=()
+           docker build --no-cache --build-arg VITE_API_TICKET_SERVICE_URL=https://rizkyiann8nautomation.my.id/ \
+            --build-arg VITE_API_PAYMENT_SERVICE_URL=https://rizkyiann8nautomation.my.id/ \
+            --build-arg VITE_API_KEY=sk_live_9f8a7b6c5d4e3f2a1 \
+            -t $IMAGE_PREFIX-demoshop:$IMAGE_TAG demoshop
+            docker push $IMAGE_PREFIX-demoshop:$IMAGE_TAG
+      - name: Build & Push Frontend Checkout Image
+        run: |
+          docker build --no-cache \
+          --build-arg VITE_API_BASE_URL=https://rizkyiann8nautomation.my.id/ \
+          -t $IMAGE_PREFIX-checkout-app:$IMAGE_TAG checkout-app
+          docker push $IMAGE_PREFIX-checkout-app:$IMAGE_TAG
+      - name: Build & Push Frontend Backoffice Image
+        run: |
+          docker build --no-cache -t $IMAGE_PREFIX-backoffice-app:$IMAGE_TAG backoffice-app
+          docker push $IMAGE_PREFIX-backoffice-app:$IMAGE_TAG         
 
-          if [ -n "${{ matrix.build_args }}" ]; then
-            while IFS= read -r arg; do
-              [[ -z "$arg" ]] && continue
-              BUILD_ARGS+=(--build-arg "$arg")
-            done <<< "${{ matrix.build_args }}"
-          fi
+      - name: Build & Push Payment Image
+        run: |
+          docker build --no-cache -t $IMAGE_PREFIX-payment:$IMAGE_TAG payment-service
+          docker push $IMAGE_PREFIX-payment:$IMAGE_TAG
+
+      - name: Build & Push Ledger Image
+        run: |
+          docker build --no-cache -t $IMAGE_PREFIX-ledger:$IMAGE_TAG ledger-service
+          docker push $IMAGE_PREFIX-ledger:$IMAGE_TAG
+
+      - name: Build & Push Ticket Image
+        run: |
+          docker build --no-cache -t $IMAGE_PREFIX-ticket:$IMAGE_TAG ticket-service
+          docker push $IMAGE_PREFIX-ticket:$IMAGE_TAG
+      - name: Build & Push Creditcard Worker Image
+        run: |
 
           docker build --no-cache \
-            "${BUILD_ARGS[@]}" \
-            -t $IMAGE_PREFIX-${{ matrix.image }}:$IMAGE_TAG \
-            ${{ matrix.context }}
+          -t $IMAGE_PREFIX-creditcard-worker:$IMAGE_TAG \
+          --build-arg CMD_NAME=creditcard \
+          payment-method-worker
 
-          docker push $IMAGE_PREFIX-${{ matrix.image }}:$IMAGE_TAG
-
-# =========================
-# GITOPS UPDATE (ARGO CD)
-# =========================
-  update-k8s-manifests:
-    name: Update Kubernetes Manifests (ArgoCD)
-    needs: docker-build-push
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set image tag
-        run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
-
-      - name: Update manifests
+          docker push $IMAGE_PREFIX-creditcard-worker:$IMAGE_TAG
+      - name: Build & Push QRIS Worker Image
         run: |
+          docker build --no-cache \
+          --build-arg CMD_NAME=qris \
+          -t $IMAGE_PREFIX-qris-worker:$IMAGE_TAG \
+          payment-method-worker
+
+          docker push $IMAGE_PREFIX-qris-worker:$IMAGE_TAG
+      - name: Build & Push Debitcard Worker Image
+        run: |
+          docker build --no-cache \
+          --build-arg CMD_NAME=debitcard \
+          -t $IMAGE_PREFIX-debitcard-worker:$IMAGE_TAG \
+          payment-method-worker
+
+          docker push $IMAGE_PREFIX-debitcard-worker:$IMAGE_TAG
+
+# =========================
+# UPLOAD COVERAGE
+# =========================
+      - name: Upload Coverage Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-code-coverage
+          path: |
+            demoshop/coverage
+            payment-service/coverage
+            ledger-service/coverage.xml
+            ticket-service/**/coverage.opencover.xml
+
+
+      - name: Update Kubernetes image tags
+        run: |
+          # Frontends
           sed -i "s|image: .*e-ticketing-demoshop:.*|image: $IMAGE_PREFIX-demoshop:$IMAGE_TAG|g" deployment/deployments/frontend-demoshop-deployment.yaml
           sed -i "s|image: .*e-ticketing-checkout-app:.*|image: $IMAGE_PREFIX-checkout-app:$IMAGE_TAG|g" deployment/deployments/frontend-checkout-deployment.yaml
           sed -i "s|image: .*e-ticketing-backoffice-app:.*|image: $IMAGE_PREFIX-backoffice-app:$IMAGE_TAG|g" deployment/deployments/frontend-backoffice-deployment.yaml
 
+          # Core services
           sed -i "s|image: .*e-ticketing-payment:.*|image: $IMAGE_PREFIX-payment:$IMAGE_TAG|g" deployment/deployments/payment-service-deployment.yaml
           sed -i "s|image: .*e-ticketing-ledger:.*|image: $IMAGE_PREFIX-ledger:$IMAGE_TAG|g" deployment/deployments/ledger-service-deployment.yaml
           sed -i "s|image: .*e-ticketing-ticket:.*|image: $IMAGE_PREFIX-ticket:$IMAGE_TAG|g" deployment/deployments/ticket-service-deployment.yaml
 
+          # Workers
           sed -i "s|image: .*e-ticketing-creditcard-worker:.*|image: $IMAGE_PREFIX-creditcard-worker:$IMAGE_TAG|g" deployment/deployments/creditcard-worker-deployment.yaml
           sed -i "s|image: .*e-ticketing-qris-worker:.*|image: $IMAGE_PREFIX-qris-worker:$IMAGE_TAG|g" deployment/deployments/qris-worker-deployment.yaml
           sed -i "s|image: .*e-ticketing-debitcard-worker:.*|image: $IMAGE_PREFIX-debitcard-worker:$IMAGE_TAG|g" deployment/deployments/debitcard-worker-deployment.yaml
 
-      - name: Commit & push
+      - name: Commit and push updated manifests
         run: |
-          git config user.name "Rizky Ian Indiarto"
-          git config user.email "rizkyian78@gmail.com"
+            git config user.name "Rizky Ian Indiarto"
+            git config user.email "rizkyian78@gmail.com"
+  
+            git fetch origin main
 
-          git add .
-          git commit -m "chore(deploy): update images to ${IMAGE_TAG}" || echo "No changes to commit"
-          git pull --rebase origin main
-          git push origin main
+            git add .
+            git commit -m "chore(deploy): update images to ${IMAGE_TAG}" || echo "No changes to commit"
+            git pull --rebase origin main
+            git push origin main
